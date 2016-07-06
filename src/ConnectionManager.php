@@ -39,17 +39,21 @@ final class ConnectionManager
 
     // Add new connection.
     if (empty(self::$connections[$sender_hash]) || empty(self::$connections[$sender_hash][$signal])) {
-      self::$connections[$sender_hash][$signal][] = array(
-        'receiver' => $receiver,
-        'slot' => $slot,
-        'type' => $connection_type,
-      );
+      // Slot methods must start from "slot" keyword.
+      if (strpos($slot, 'slot') === 0) {
+        self::$connections[$sender_hash][$signal][] = array(
+          'receiver' => $receiver,
+          'slot' => $slot,
+          'type' => $connection_type,
+        );
+      }
     }
     else {
       // Add new connection for same signal and receiver.
       if (!empty(self::$connections[$sender_hash][$signal])) {
         foreach (self::$connections[$sender_hash][$signal] as $connection_index => $connection) {
-          if ($connection['slot'] != $slot) {
+          // Slot methods must start from "slot" keyword.
+          if ($connection['slot'] != $slot && strpos($slot, 'slot') === 0) {
             self::$connections[$sender_hash][$signal][] = array(
               'receiver' => $receiver,
               'slot' => $slot,
@@ -73,7 +77,8 @@ final class ConnectionManager
    * @param string $slot
    *   Slot name.
    */
-  public static function disconnect($sender, $signal, $receiver, $slot) {
+  public static function disconnect($sender, $signal, $receiver, $slot)
+  {
     $sender_hash = spl_object_hash($sender);
 
     // Find and remove connection.
@@ -92,9 +97,22 @@ final class ConnectionManager
     }
   }
 
+  /**
+   * Returns all defined connections.
+   *
+   * @return array
+   *   Defined connections keyed by sender object hash.
+   */
   public static function getConnections()
   {
     return self::$connections;
   }
 
+  /**
+   * Resets all defined connections.
+   */
+  public static function resetAllConnections()
+  {
+    self::$connections = array();
+  }
 }

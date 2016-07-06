@@ -23,7 +23,7 @@ abstract class Signal
    */
   public function __call($signal, array $arguments)
   {
-    // Signal methods must starts from "emit" keyword.
+    // Signal methods must start from "emit" keyword.
     if (strpos($signal, 'emit') === 0) {
       $connections = ConnectionManager::getConnections();
       $sender_hash = spl_object_hash($this);
