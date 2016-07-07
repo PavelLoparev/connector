@@ -8,7 +8,8 @@
 namespace Fluffy\Connector;
 
 /**
- * Class ConnectionManager.
+ * Class ConnectionManager
+ * @package Fluffy\Connector
  */
 final class ConnectionManager
 {

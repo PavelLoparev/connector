@@ -11,7 +11,7 @@ There are tha same situations in programming: sometimes we need to react on some
 # Installation
 Run
 ```
-composer require fluffy/connector
+$ composer require fluffy/connector
 ```
 
 or add dependency to your composer.json file
@@ -27,7 +27,7 @@ or add dependency to your composer.json file
 
 **1. Signals**
 
-If you want your object will be able to emit signals you need to extend you class from `Signal` class. For example you have some logger class and you want to emit signal `somethingIsLogged` when logger finished work:
+If you want your object will be able to emit signals you need to implement `SignalInterface` and use `SignalTrait`. For example you have some logger class and you want to emit signal `somethingIsLogged` when logger finished work:
 ```php
 <?php
 
@@ -36,13 +36,14 @@ If you want your object will be able to emit signals you need to extend you clas
  * Contains definition of Logger class.
  */
 
+use Fluffy\Connector\Signal\SignalInterface;
+use Fluffy\Connector\Signal\SignalTrait;
+
 /**
  * Class Logger.
  */
-
-use Fluffy\Connector\Signal;
-
-class Logger extends Signal {
+class Logger implements SignalInterface {
+    use SignalTrait;
 
     public function log() 
     {
@@ -122,8 +123,25 @@ $logger->log();
 
 After second call of `Logger::log()` nothing will happen because slot will be disconnected from signal after first emission.
 
+**5. Disconnect**
+
+If you don't want to listen signal anymore just disconnect from it.
+```php
+ConnectionManager::disconnect($logger, 'somethingIsLogged', $receiver, 'slotReactOnSignal');
+```
+If you want to reset all existing connections call
+```php
+ConnectionManager::resetAllConnections()
+```
+
+# Tests
+`$ phpunit tests`
+
 # What for?
 I just like Qt's signal and slot system and want to bring it into PHP world.
 
 # Any advantages?
 It's lightweight and doesn't have any dependencies.
+
+# License
+GPLv3. See LICENSE file.

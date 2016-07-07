@@ -2,25 +2,20 @@
 
 /**
  * @file
- * Contains definition of signal class.
+ * Contains definition of signal trait.
  */
 
-namespace Fluffy\Connector;
+namespace Fluffy\Connector\Signal;
+
+use Fluffy\Connector\ConnectionManager;
 
 /**
- * Class Signal.
+ * Trait SignalTrait
+ * @package Fluffy\Connector\Signal
  */
-abstract class Signal
+trait SignalTrait
 {
 
-  /**
-   * Emit signal with parameters.
-   *
-   * @param string $signal
-   *   Signal name.
-   * @param mixed $data
-   *   Passed into slot arguments.
-   */
   public function emit($signal, $data)
   {
     $connections = ConnectionManager::getConnections();

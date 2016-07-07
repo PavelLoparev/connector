@@ -5,11 +5,12 @@
  * Contains definition of Sender class.
  */
 
+use Fluffy\Connector\Signal\SignalInterface;
+use Fluffy\Connector\Signal\SignalTrait;
+
 /**
  * Class Sender.
  */
-
-use Fluffy\Connector\Signal;
-
-class Sender extends Signal {
+class Sender implements SignalInterface {
+  use SignalTrait;
 }
