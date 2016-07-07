@@ -33,10 +33,10 @@ class ConnectorTest extends TestCase
     $sender = new Sender();
     $receiver = new Receiver();
 
-    ConnectionManager::connect($sender, 'emitTestSignal', $receiver, 'slotOne');
+    ConnectionManager::connect($sender, 'testSignal', $receiver, 'slotOne');
 
     $this->expectOutputString('Received data (slot 1): Signal data' . PHP_EOL);
-    $sender->emitTestSignal('Signal data');
+    $sender->emit('testSignal', 'Signal data');
   }
 
   /**
@@ -52,11 +52,11 @@ class ConnectorTest extends TestCase
     $receiver1 = new Receiver();
     $receiver2 = new Receiver();
 
-    ConnectionManager::connect($sender, 'emitTestSignal', $receiver1, 'slotOne');
-    ConnectionManager::connect($sender, 'emitTestSignal', $receiver2, 'slotTwo');
+    ConnectionManager::connect($sender, 'testSignal', $receiver1, 'slotOne');
+    ConnectionManager::connect($sender, 'testSignal', $receiver2, 'slotTwo');
 
     $this->expectOutputString('Received data (slot 1): Signal data' . PHP_EOL . 'Received data (slot 2): Signal data' . PHP_EOL);
-    $sender->emitTestSignal('Signal data');
+    $sender->emit('testSignal', 'Signal data');
   }
 
   /**
@@ -73,12 +73,12 @@ class ConnectorTest extends TestCase
     $receiver1 = new Receiver();
     $receiver2 = new Receiver();
 
-    ConnectionManager::connect($sender1, 'emitTestSignalOne', $receiver1, 'slotOne');
-    ConnectionManager::connect($sender2, 'emitTestSignalTwo', $receiver2, 'slotTwo');
+    ConnectionManager::connect($sender1, 'testSignalOne', $receiver1, 'slotOne');
+    ConnectionManager::connect($sender2, 'testSignalTwo', $receiver2, 'slotTwo');
 
     $this->expectOutputString('Received data (slot 1): Signal data 1' . PHP_EOL . 'Received data (slot 2): Signal data 2' . PHP_EOL);
-    $sender1->emitTestSignalOne('Signal data 1');
-    $sender2->emitTestSignalTwo('Signal data 2');
+    $sender1->emit('testSignalOne', 'Signal data 1');
+    $sender2->emit('testSignalTwo', 'Signal data 2');
   }
 
   /**
@@ -94,12 +94,12 @@ class ConnectorTest extends TestCase
     $sender2 = new Sender();
     $receiver = new Receiver();
 
-    ConnectionManager::connect($sender1, 'emitTestSignalOne', $receiver, 'slotOne');
-    ConnectionManager::connect($sender2, 'emitTestSignalTwo', $receiver, 'slotOne');
+    ConnectionManager::connect($sender1, 'testSignalOne', $receiver, 'slotOne');
+    ConnectionManager::connect($sender2, 'testSignalTwo', $receiver, 'slotOne');
 
     $this->expectOutputString('Received data (slot 1): Signal data 1' . PHP_EOL . 'Received data (slot 1): Signal data 2' . PHP_EOL);
-    $sender1->emitTestSignalOne('Signal data 1');
-    $sender2->emitTestSignalTwo('Signal data 2');
+    $sender1->emit('testSignalOne', 'Signal data 1');
+    $sender2->emit('testSignalTwo', 'Signal data 2');
   }
 
   /**
@@ -115,17 +115,17 @@ class ConnectorTest extends TestCase
     $sender = new Sender();
     $receiver = new Receiver();
 
-    ConnectionManager::connect($sender, 'emitTestSignal', $receiver, 'slotOne');
+    ConnectionManager::connect($sender, 'testSignal', $receiver, 'slotOne');
 
     $this->expectOutputString('Received data (slot 1): Signal data' . PHP_EOL . 'Received data (slot 1): Signal data' . PHP_EOL);
-    $sender->emitTestSignal('Signal data');
-    $sender->emitTestSignal('Signal data');
+    $sender->emit('testSignal', 'Signal data');
+    $sender->emit('testSignal', 'Signal data');
   }
 
   /**
    * Test connection type: once.
    *
-   * Connection with type "CONNECTION_ONCE" will be disconnected after first
+   * Connection with type "CONNECTION_ONE_TIME" will be disconnected after first
    * signal emission.
    */
   public function testOnceConnection()
@@ -135,10 +135,10 @@ class ConnectorTest extends TestCase
     $sender = new Sender();
     $receiver = new Receiver();
 
-    ConnectionManager::connect($sender, 'emitTestSignal', $receiver, 'slotOne', ConnectionManager::CONNECTION_ONCE);
+    ConnectionManager::connect($sender, 'testSignal', $receiver, 'slotOne', ConnectionManager::CONNECTION_ONE_TIME);
 
     $this->expectOutputString('Received data (slot 1): Signal data' . PHP_EOL);
-    $sender->emitTestSignal('Signal data');
-    $sender->emitTestSignal('Signal data');
+    $sender->emit('testSignal', 'Signal data');
+    $sender->emit('testSignal', 'Signal data');
   }
 }

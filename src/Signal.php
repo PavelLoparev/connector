@@ -14,29 +14,26 @@ abstract class Signal
 {
 
   /**
-   * Implements magic method __call.
+   * Emit signal with parameters.
    *
    * @param string $signal
    *   Signal name.
-   * @param array $arguments
+   * @param mixed $data
    *   Passed into slot arguments.
    */
-  public function __call($signal, array $arguments)
+  public function emit($signal, $data)
   {
-    // Signal methods must start from "emit" keyword.
-    if (strpos($signal, 'emit') === 0) {
-      $connections = ConnectionManager::getConnections();
-      $sender_hash = spl_object_hash($this);
+    $connections = ConnectionManager::getConnections();
+    $sender_hash = spl_object_hash($this);
 
-      if (!empty($connections[$sender_hash][$signal])) {
-        // Run all connected slots.
-        foreach ($connections[$sender_hash][$signal] as $connection_index => $connection) {
-          call_user_func(array($connection['receiver'], $connection['slot']), $arguments);
+    if (!empty($connections[$sender_hash][$signal])) {
+      // Run all connected slots.
+      foreach ($connections[$sender_hash][$signal] as $connection_index => $connection) {
+        call_user_func(array($connection['receiver'], $connection['slot']), $data);
 
-          // Remove connection if type is "once".
-          if ($connection['type'] == ConnectionManager::CONNECTION_ONCE) {
-            ConnectionManager::disconnect($this, $signal, $connection['receiver'], $connection['slot']);
-          }
+        // Remove connection if type is "one-time".
+        if ($connection['type'] == ConnectionManager::CONNECTION_ONE_TIME) {
+          ConnectionManager::disconnect($this, $signal, $connection['receiver'], $connection['slot']);
         }
       }
     }

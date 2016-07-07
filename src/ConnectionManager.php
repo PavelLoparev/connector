@@ -14,7 +14,7 @@ final class ConnectionManager
 {
 
   const CONNECTION_PERMANENT = 0;
-  const CONNECTION_ONCE = 1;
+  const CONNECTION_ONE_TIME = 1;
 
   private static $connections = NULL;
 
@@ -31,7 +31,7 @@ final class ConnectionManager
    *   Slot name.
    * @param int $connection_type
    *   Connection type. CONNECTION_PERMANENT will work until it is disconnected.
-   *   CONNECTION_ONCE will work only once.
+   *   CONNECTION_ONE_TIME will work only once.
    */
   public static function connect($sender, $signal, $receiver, $slot, $connection_type = self::CONNECTION_PERMANENT)
   {
