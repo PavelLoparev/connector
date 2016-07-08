@@ -5,6 +5,8 @@
  * Contains definition of Receiver class.
  */
 
+namespace Connector\Tests;
+
 /**
  * Class Receiver.
  */

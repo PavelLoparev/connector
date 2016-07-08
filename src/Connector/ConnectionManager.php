@@ -40,21 +40,17 @@ final class ConnectionManager
 
     // Add new connection.
     if (empty(self::$connections[$sender_hash]) || empty(self::$connections[$sender_hash][$signal])) {
-      // Slot methods must start from "slot" keyword.
-      if (strpos($slot, 'slot') === 0) {
-        self::$connections[$sender_hash][$signal][] = array(
-          'receiver' => $receiver,
-          'slot' => $slot,
-          'type' => $connection_type,
-        );
-      }
+      self::$connections[$sender_hash][$signal][] = array(
+        'receiver' => $receiver,
+        'slot' => $slot,
+        'type' => $connection_type,
+      );
     }
     else {
       // Add new connection for same signal and receiver.
       if (!empty(self::$connections[$sender_hash][$signal])) {
-        foreach (self::$connections[$sender_hash][$signal] as $connection_index => $connection) {
-          // Slot methods must start from "slot" keyword.
-          if ($connection['slot'] != $slot && strpos($slot, 'slot') === 0) {
+        foreach (self::$connections[$sender_hash][$signal] as $connection) {
+          if ($connection['slot'] != $slot) {
             self::$connections[$sender_hash][$signal][] = array(
               'receiver' => $receiver,
               'slot' => $slot,

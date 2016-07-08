@@ -5,21 +5,16 @@
  * Contains definition of ConnectorTest class.
  */
 
-/**
- * Class ConnectorTest.
- */
+namespace Connector\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Fluffy\Connector\ConnectionManager;
 
+/**
+ * Class ConnectorTest.
+ */
 class ConnectorTest extends TestCase
 {
-
-  public function __construct()
-  {
-    require_once "TestClasses/Sender.php";
-    require_once "TestClasses/Receiver.php";
-  }
 
   /**
    * Test connection from one signal to one slot.

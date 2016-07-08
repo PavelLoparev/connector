@@ -19,7 +19,7 @@ or add dependency to your composer.json file
 ```javascript
 "require": {
     ...
-    "fluffy/connector": "^1.0"
+    "fluffy/connector": "^1.2"
 }
 ```
 
@@ -60,7 +60,7 @@ To emit signal you need to call `emit` method and pass signal name and data. You
 
 **2. Slots**
 
-Slot it's a usual class method that starts from `slot` keyword. Let's define a class with a slot.
+Slot it's a usual class method. Let's define a class with a slot.
 ```php
 <?php
 
@@ -135,7 +135,9 @@ ConnectionManager::resetAllConnections()
 ```
 
 # Tests
-`$ phpunit tests`
+`$ composer install`
+
+`$ phpunit`
 
 # What for?
 I just like Qt's signal and slot system and want to bring it into PHP world.
