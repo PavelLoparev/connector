@@ -37,25 +37,22 @@ final class ConnectionManager
   public static function connect($sender, $signal, $receiver, $slot, $connection_type = self::CONNECTION_PERMANENT)
   {
     $sender_hash = spl_object_hash($sender);
+    $connection_item = array(
+      'receiver' => $receiver,
+      'slot' => $slot,
+      'type' => $connection_type,
+    );
 
     // Add new connection.
     if (empty(self::$connections[$sender_hash]) || empty(self::$connections[$sender_hash][$signal])) {
-      self::$connections[$sender_hash][$signal][] = array(
-        'receiver' => $receiver,
-        'slot' => $slot,
-        'type' => $connection_type,
-      );
+      self::$connections[$sender_hash][$signal][] = $connection_item;
     }
     else {
       // Add new connection for same signal and receiver.
       if (!empty(self::$connections[$sender_hash][$signal])) {
         foreach (self::$connections[$sender_hash][$signal] as $connection) {
           if ($connection['slot'] != $slot) {
-            self::$connections[$sender_hash][$signal][] = array(
-              'receiver' => $receiver,
-              'slot' => $slot,
-              'type' => $connection_type,
-            );
+            self::$connections[$sender_hash][$signal][] = $connection_item;
           }
         }
       }
