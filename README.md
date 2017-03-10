@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/PavelLoparev/connector.svg?branch=master)](https://travis-ci.org/PavelLoparev/connector)
+
 # Connector - "Signals and slots" mechanism for PHP.
 This library is inspired by Qt "Signals and slots" mechanism so it's pretty similar.
 
