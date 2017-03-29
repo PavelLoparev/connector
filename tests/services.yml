@@ -1,0 +1,3 @@
+services:
+  test.service:
+    class: Fluffy\Tests\Service\TestService

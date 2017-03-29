@@ -1,0 +1,10 @@
+test_connection_1:
+  sender:
+    type: service
+    class: test.service
+  signal: testSignal
+  receiver:
+    type: service
+    class: test.service
+  slot: testSlot
+  connection_type: permanent

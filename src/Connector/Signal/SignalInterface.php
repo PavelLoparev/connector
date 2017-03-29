@@ -11,8 +11,7 @@ namespace Fluffy\Connector\Signal;
  * Interface SignalInterface
  * @package Fluffy\Connector\Signal
  */
-interface SignalInterface
-{
+interface SignalInterface {
 
   /**
    * Emit signal with parameters.

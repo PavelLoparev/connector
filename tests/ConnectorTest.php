@@ -5,26 +5,29 @@
  * Contains definition of ConnectorTest class.
  */
 
-namespace Connector\Tests;
+namespace Fluffy\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Fluffy\Connector\ConnectionManager;
+use Fluffy\Tests\Sender\Sender;
+use Fluffy\Tests\Receiver\Receiver;
 
 /**
  * Class ConnectorTest.
  */
-class ConnectorTest extends TestCase
-{
+class ConnectorTest extends TestCase {
+
+  public function setUp() {
+    ConnectionManager::resetAllConnections();
+    ConnectionManager::init(__DIR__);
+  }
 
   /**
    * Test connection from one signal to one slot.
    *
    * One sender emits signal. One receiver reacts on one signal.
    */
-  public function testOneToOneConnection()
-  {
-    ConnectionManager::resetAllConnections();
-
+  public function testOneToOneConnection() {
     $sender = new Sender();
     $receiver = new Receiver();
 
@@ -39,10 +42,7 @@ class ConnectorTest extends TestCase
    *
    * One sender emits signal. Two receivers react on one signal.
    */
-  public function testOneToManyConnection()
-  {
-    ConnectionManager::resetAllConnections();
-
+  public function testOneToManyConnection() {
     $sender = new Sender();
     $receiver1 = new Receiver();
     $receiver2 = new Receiver();
@@ -59,10 +59,7 @@ class ConnectorTest extends TestCase
    *
    * Two senders emit signals. Two receivers react on signals.
    */
-  public function testManyToManyConnection()
-  {
-    ConnectionManager::resetAllConnections();
-
+  public function testManyToManyConnection() {
     $sender1 = new Sender();
     $sender2 = new Sender();
     $receiver1 = new Receiver();
@@ -81,10 +78,7 @@ class ConnectorTest extends TestCase
    *
    * Two senders emit signals. One receiver reacts on signals.
    */
-  public function testManyToOneConnection()
-  {
-    ConnectionManager::resetAllConnections();
-
+  public function testManyToOneConnection() {
     $sender1 = new Sender();
     $sender2 = new Sender();
     $receiver = new Receiver();
@@ -103,10 +97,7 @@ class ConnectorTest extends TestCase
    * Connection with type "CONNECTION_PERMANENT" will not be disconnected after
    * first signal emission.
    */
-  public function testPermanentConnection()
-  {
-    ConnectionManager::resetAllConnections();
-
+  public function testPermanentConnection() {
     $sender = new Sender();
     $receiver = new Receiver();
 
@@ -123,10 +114,7 @@ class ConnectorTest extends TestCase
    * Connection with type "CONNECTION_ONE_TIME" will be disconnected after first
    * signal emission.
    */
-  public function testOnceConnection()
-  {
-    ConnectionManager::resetAllConnections();
-
+  public function testOnceConnection() {
     $sender = new Sender();
     $receiver = new Receiver();
 
@@ -142,10 +130,7 @@ class ConnectorTest extends TestCase
    *
    * Connect, emit signal, disconnect and emit once again.
    */
-  public function testDisconnect()
-  {
-    ConnectionManager::resetAllConnections();
-
+  public function testDisconnect() {
     $sender = new Sender();
     $receiver = new Receiver();
 
@@ -165,10 +150,7 @@ class ConnectorTest extends TestCase
    * Connect two slots to two signals, emit signals, reset all connections and
    * emit once again.
    */
-  public function testResetAllConnections()
-  {
-    ConnectionManager::resetAllConnections();
-
+  public function testResetAllConnections() {
     $sender1 = new Sender();
     $sender2 = new Sender();
     $receiver = new Receiver();

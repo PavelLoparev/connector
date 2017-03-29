@@ -5,7 +5,7 @@
  * Contains definition of Sender class.
  */
 
-namespace Connector\Tests;
+namespace Fluffy\Tests\Sender;
 
 use Fluffy\Connector\Signal\SignalInterface;
 use Fluffy\Connector\Signal\SignalTrait;
@@ -14,5 +14,7 @@ use Fluffy\Connector\Signal\SignalTrait;
  * Class Sender.
  */
 class Sender implements SignalInterface {
+
   use SignalTrait;
+
 }

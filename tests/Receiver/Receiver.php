@@ -5,13 +5,12 @@
  * Contains definition of Receiver class.
  */
 
-namespace Connector\Tests;
+namespace Fluffy\Tests\Receiver;
 
 /**
  * Class Receiver.
  */
-class Receiver
-{
+class Receiver {
 
   public function slotOne($data) {
     echo "Received data (slot 1): $data" . PHP_EOL;

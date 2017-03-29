@@ -13,18 +13,16 @@ use Fluffy\Connector\ConnectionManager;
  * Trait SignalTrait
  * @package Fluffy\Connector\Signal
  */
-trait SignalTrait
-{
+trait SignalTrait {
 
-  public function emit($signal, $data)
-  {
+  public function emit($signal, $data) {
     $connections = ConnectionManager::getConnections();
     $sender_hash = spl_object_hash($this);
 
     if (!empty($connections[$sender_hash][$signal])) {
       // Run all connected slots.
       foreach ($connections[$sender_hash][$signal] as $connection_index => $connection) {
-        call_user_func(array($connection['receiver'], $connection['slot']), $data);
+        call_user_func([$connection['receiver'], $connection['slot']], $data);
 
         // Remove connection if type is "one-time".
         if ($connection['type'] == ConnectionManager::CONNECTION_ONE_TIME) {
