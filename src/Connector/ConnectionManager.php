@@ -16,11 +16,26 @@ use RuntimeException;
  */
 final class ConnectionManager {
 
+  /**
+   * Constant defines permanent connection type.
+   */
   const CONNECTION_PERMANENT = 0;
+
+  /**
+   * Constant defines one time connection type.
+   */
   const CONNECTION_ONE_TIME = 1;
 
-  private static $connections = NULL;
+  /**
+   * @var array
+   */
+  private static $connections = [];
 
+  /**
+   * Initializes multiple connections.
+   *
+   * @param array $connections
+   */
   public static function initConnections(array $connections) {
     foreach ($connections as $connection) {
       if (empty($connection['sender']) ||
