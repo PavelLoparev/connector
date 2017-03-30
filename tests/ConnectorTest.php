@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Fluffy\Connector\ConnectionManager;
 use Fluffy\Tests\Sender\Sender;
 use Fluffy\Tests\Receiver\Receiver;
+use RuntimeException;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
@@ -249,6 +250,209 @@ class ConnectorTest extends TestCase {
 
     $connections = ConnectionManager::getConnections();
     $this->assertEquals(2, count($connections));
+  }
+
+  /**
+   * Test batch init connections.
+   */
+  public function testBatchInitConnections() {
+    $sender1 = new Sender();
+    $sender2 = new Sender();
+    $receiver1 = $this->getMockBuilder(Receiver::class)
+      ->setMethods(['slotOne'])
+      ->getMock();
+
+    $receiver1->expects($this->once())
+      ->method('slotOne')
+      ->with('Signal data 1');
+
+    $receiver2 = $this->getMockBuilder(Receiver::class)
+      ->setMethods(['slotTwo'])
+      ->getMock();
+
+    $receiver2->expects($this->once())
+      ->method('slotTwo')
+      ->with('Signal data 2');
+
+    ConnectionManager::initConnections([
+      [
+        'sender' => $sender1,
+        'signal' => 'testSignal',
+        'receiver' => $receiver1,
+        'slot' => 'slotOne',
+        'type' => ConnectionManager::CONNECTION_PERMANENT,
+      ],
+      [
+        'sender' => $sender2,
+        'signal' => 'testSignal',
+        'receiver' => $receiver2,
+        'slot' => 'slotTwo',
+        'type' => ConnectionManager::CONNECTION_ONE_TIME,
+      ],
+    ]);
+
+    $sender1->emit('testSignal', 'Signal data 1');
+    $sender2->emit('testSignal', 'Signal data 2');
+
+    $connections = ConnectionManager::getConnections();
+    $this->assertEquals(1, count($connections));
+  }
+
+  /**
+   * Test batch init connections with unknown type.
+   *
+   * @expectedException RuntimeException
+   * @expectedExceptionMessage Unknown connection type.
+   */
+  public function testBatchInitConnectionsWithUnknownType() {
+    ConnectionManager::initConnections([
+      [
+        'sender' => new Sender(),
+        'signal' => 'testSignal',
+        'receiver' => new Receiver(),
+        'slot' => 'slotOne',
+        'type' => 2,
+      ],
+    ]);
+  }
+
+  /**
+   * Test batch init malformed connections.
+   *
+   * @param array $connections
+   *
+   * @dataProvider malformedConnectionsProvider
+   * @expectedException RuntimeException
+   * @expectedExceptionMessage Malformed connection.
+   */
+  public function testBatchInitMalformedConnections(array $connections) {
+    ConnectionManager::initConnections($connections);
+  }
+
+  /**
+   * Data provider for testBatchInitConnections() test method.
+   */
+  public function malformedConnectionsProvider() {
+    return [
+      [
+        [
+          [
+          ],
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => new Sender(),
+          ],
+        ],
+      ],
+      [
+        [
+          [
+            'signal' => 'testSignal',
+          ],
+        ],
+      ],
+      [
+        [
+          [
+            'receiver' => new Receiver(),
+          ],
+        ],
+      ],
+      [
+        [
+          [
+            'slot' => 'slotOne',
+          ],
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => new Sender(),
+            'signal' => 'testSignal',
+          ],
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => new Sender(),
+            'receiver' => new Receiver(),
+          ],
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => new Sender(),
+            'slot' => 'slotOne',
+          ],
+        ],
+      ],
+      [
+        [
+          [
+            'signal' => 'testSignal',
+            'receiver' => new Receiver(),
+          ],
+        ],
+      ],
+      [
+        [
+          [
+            'signal' => 'testSignal',
+            'slot' => 'slotOne',
+          ],
+        ],
+      ],
+      [
+        [
+          [
+            'receiver' => new Receiver(),
+            'slot' => 'slotOne',
+          ],
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => new Sender(),
+            'signal' => 'testSignal',
+            'receiver' => new Receiver(),
+          ],
+        ],
+      ],
+      [
+        [
+          [
+            'signal' => 'testSignal',
+            'receiver' => new Receiver(),
+            'slot' => 'slotOne',
+          ],
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => new Sender(),
+            'receiver' => new Receiver(),
+            'slot' => 'slotOne',
+          ],
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => new Sender(),
+            'signal' => 'testSignal',
+            'slot' => 'slotOne',
+          ],
+        ],
+      ]
+    ];
   }
 
 }

@@ -8,7 +8,7 @@
 namespace Fluffy\Connector;
 
 use Fluffy\Connector\Signal\SignalInterface;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
+use RuntimeException;
 
 /**
  * Class ConnectionManager
@@ -21,8 +21,37 @@ final class ConnectionManager {
 
   private static $connections = NULL;
 
-  public static function init(ContainerBuilder $container) {
-    $test = $container->get('sender');
+  public static function initConnections(array $connections) {
+    foreach ($connections as $connection) {
+      if (empty($connection['sender']) ||
+        empty($connection['signal']) ||
+        empty($connection['receiver']) ||
+        empty($connection['slot'])
+      ) {
+        ConnectionManager::resetAllConnections();
+        throw new RuntimeException('Malformed connection.');
+      }
+
+      if (!empty($connection['type'])) {
+        if (!in_array($connection['type'], [
+            ConnectionManager::CONNECTION_PERMANENT,
+            ConnectionManager::CONNECTION_ONE_TIME,
+          ]
+        )) {
+          throw new RuntimeException("Unknown connection type.");
+        }
+      }
+      else {
+        $connection['type'] = ConnectionManager::CONNECTION_PERMANENT;
+      }
+
+      ConnectionManager::connect($connection['sender'],
+        $connection['signal'],
+        $connection['receiver'],
+        $connection['slot'],
+        $connection['type']
+      );
+    }
   }
 
   /**

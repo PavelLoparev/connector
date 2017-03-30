@@ -3,11 +3,10 @@ test_connection_one:
   signal: testSignal
   receiver: service.receiver
   slot: slotOne
-  connection_type: permanent
 
 test_connection_two:
   sender: service.sender
   signal: testSignal
   receiver: service.receiver
   slot: slotTwo
-  connection_type: one_time
+  type: 1
