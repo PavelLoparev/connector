@@ -43,7 +43,6 @@ final class ConnectionManager {
         empty($connection['receiver']) ||
         empty($connection['slot'])
       ) {
-        ConnectionManager::resetAllConnections();
         throw new RuntimeException('Malformed connection.');
       }
 
