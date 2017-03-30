@@ -7,11 +7,8 @@
 
 namespace Fluffy\Connector;
 
-use Symfony\Component\Config\Exception\FileLocatorFileNotFoundException;
-use Symfony\Component\Config\FileLocator;
+use Fluffy\Connector\Signal\SignalInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
-use Symfony\Component\Yaml\Yaml;
 
 /**
  * Class ConnectionManager
@@ -24,24 +21,14 @@ final class ConnectionManager {
 
   private static $connections = NULL;
 
-  public static function init($path) {
-    $container = new ContainerBuilder();
-    $serviceLoader = new YamlFileLoader($container, new FileLocator($path));
-    $connections = Yaml::parse(file_get_contents($path . '/connections.yml'));
-
-    try {
-      $serviceLoader->load('services.yml');
-      $test = $container->get('test.service');
-    }
-    catch (FileLocatorFileNotFoundException $e) {
-      // TODO: implement exception handling.
-    }
+  public static function init(ContainerBuilder $container) {
+    $test = $container->get('sender');
   }
 
   /**
    * Connect sender's signal to receiver's slot.
    *
-   * @param object $sender
+   * @param \Fluffy\Connector\Signal\SignalInterface|object $sender
    *   Object that defines a $signal.
    * @param string $signal
    *   Signal name.
@@ -53,7 +40,7 @@ final class ConnectionManager {
    *   Connection type. CONNECTION_PERMANENT will work until it is disconnected.
    *   CONNECTION_ONE_TIME will work only once.
    */
-  public static function connect($sender, $signal, $receiver, $slot, $connection_type = self::CONNECTION_PERMANENT) {
+  public static function connect(SignalInterface $sender, $signal, $receiver, $slot, $connection_type = self::CONNECTION_PERMANENT) {
     $sender_hash = spl_object_hash($sender);
     $connection_item = [
       'receiver' => $receiver,

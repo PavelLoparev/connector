@@ -12,12 +12,8 @@ namespace Fluffy\Tests\Receiver;
  */
 class Receiver {
 
-  public function slotOne($data) {
-    echo "Received data (slot 1): $data" . PHP_EOL;
-  }
+  public function slotOne($data) {}
 
-  public function slotTwo($data) {
-    echo "Received data (slot 2): $data" . PHP_EOL;
-  }
+  public function slotTwo($data) {}
 
 }

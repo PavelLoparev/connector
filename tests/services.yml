@@ -1,3 +1,5 @@
 services:
-  test.service:
-    class: Fluffy\Tests\Service\TestService
+  service.receiver:
+    class: Fluffy\Tests\Receiver\Receiver
+  service.sender:
+    class: Fluffy\Tests\Sender\Sender

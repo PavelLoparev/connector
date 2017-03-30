@@ -11,15 +11,24 @@ use PHPUnit\Framework\TestCase;
 use Fluffy\Connector\ConnectionManager;
 use Fluffy\Tests\Sender\Sender;
 use Fluffy\Tests\Receiver\Receiver;
+use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 /**
  * Class ConnectorTest.
  */
 class ConnectorTest extends TestCase {
 
+  private $container;
+
   public function setUp() {
+    $container = new ContainerBuilder();
+    $serviceLoader = new YamlFileLoader($container, new FileLocator(__DIR__));
+    $serviceLoader->load('services.yml');
+    $this->container = $container;
+
     ConnectionManager::resetAllConnections();
-    ConnectionManager::init(__DIR__);
   }
 
   /**
@@ -29,12 +38,17 @@ class ConnectorTest extends TestCase {
    */
   public function testOneToOneConnection() {
     $sender = new Sender();
-    $receiver = new Receiver();
+    $receiver = $this->getMockBuilder(Receiver::class)
+      ->setMethods(['slotOne'])
+      ->getMock();
+
+    $receiver->expects($this->once())
+      ->method('slotOne')
+      ->with('Signal data');
 
     ConnectionManager::connect($sender, 'testSignal', $receiver, 'slotOne');
 
     $sender->emit('testSignal', 'Signal data');
-    $this->expectOutputString('Received data (slot 1): Signal data' . PHP_EOL);
   }
 
   /**
@@ -44,14 +58,26 @@ class ConnectorTest extends TestCase {
    */
   public function testOneToManyConnection() {
     $sender = new Sender();
-    $receiver1 = new Receiver();
-    $receiver2 = new Receiver();
+    $receiver1 = $this->getMockBuilder(Receiver::class)
+      ->setMethods(['slotOne'])
+      ->getMock();
+
+    $receiver1->expects($this->once())
+      ->method('slotOne')
+      ->with('Signal data');
+
+    $receiver2 = $this->getMockBuilder(Receiver::class)
+      ->setMethods(['slotTwo'])
+      ->getMock();
+
+    $receiver2->expects($this->once())
+      ->method('slotTwo')
+      ->with('Signal data');
 
     ConnectionManager::connect($sender, 'testSignal', $receiver1, 'slotOne');
     ConnectionManager::connect($sender, 'testSignal', $receiver2, 'slotTwo');
 
     $sender->emit('testSignal', 'Signal data');
-    $this->expectOutputString('Received data (slot 1): Signal data' . PHP_EOL . 'Received data (slot 2): Signal data' . PHP_EOL);
   }
 
   /**
@@ -62,33 +88,50 @@ class ConnectorTest extends TestCase {
   public function testManyToManyConnection() {
     $sender1 = new Sender();
     $sender2 = new Sender();
-    $receiver1 = new Receiver();
-    $receiver2 = new Receiver();
+    $receiver1 = $this->getMockBuilder(Receiver::class)
+      ->setMethods(['slotOne'])
+      ->getMock();
+
+    $receiver1->expects($this->once())
+      ->method('slotOne')
+      ->with('Signal data 1');
+
+    $receiver2 = $this->getMockBuilder(Receiver::class)
+      ->setMethods(['slotTwo'])
+      ->getMock();
+
+    $receiver2->expects($this->once())
+      ->method('slotTwo')
+      ->with('Signal data 2');
 
     ConnectionManager::connect($sender1, 'testSignalOne', $receiver1, 'slotOne');
     ConnectionManager::connect($sender2, 'testSignalTwo', $receiver2, 'slotTwo');
 
     $sender1->emit('testSignalOne', 'Signal data 1');
     $sender2->emit('testSignalTwo', 'Signal data 2');
-    $this->expectOutputString('Received data (slot 1): Signal data 1' . PHP_EOL . 'Received data (slot 2): Signal data 2' . PHP_EOL);
   }
 
   /**
-   * Test connection from many signals to many slots.
+   * Test connection from many signals to one slot.
    *
    * Two senders emit signals. One receiver reacts on signals.
    */
   public function testManyToOneConnection() {
     $sender1 = new Sender();
     $sender2 = new Sender();
-    $receiver = new Receiver();
+    $receiver = $this->getMockBuilder(Receiver::class)
+      ->setMethods(['slotOne'])
+      ->getMock();
+
+    $receiver->expects($this->exactly(2))
+      ->method('slotOne')
+      ->withConsecutive(['Signal data 1'], ['Signal data 2']);
 
     ConnectionManager::connect($sender1, 'testSignalOne', $receiver, 'slotOne');
     ConnectionManager::connect($sender2, 'testSignalTwo', $receiver, 'slotOne');
 
     $sender1->emit('testSignalOne', 'Signal data 1');
     $sender2->emit('testSignalTwo', 'Signal data 2');
-    $this->expectOutputString('Received data (slot 1): Signal data 1' . PHP_EOL . 'Received data (slot 1): Signal data 2' . PHP_EOL);
   }
 
   /**
@@ -99,13 +142,18 @@ class ConnectorTest extends TestCase {
    */
   public function testPermanentConnection() {
     $sender = new Sender();
-    $receiver = new Receiver();
+    $receiver = $this->getMockBuilder(Receiver::class)
+      ->setMethods(['slotOne'])
+      ->getMock();
+
+    $receiver->expects($this->exactly(2))
+      ->method('slotOne')
+      ->with('Signal data');
 
     ConnectionManager::connect($sender, 'testSignal', $receiver, 'slotOne');
 
     $sender->emit('testSignal', 'Signal data');
     $sender->emit('testSignal', 'Signal data');
-    $this->expectOutputString('Received data (slot 1): Signal data' . PHP_EOL . 'Received data (slot 1): Signal data' . PHP_EOL);
   }
 
   /**
@@ -116,13 +164,18 @@ class ConnectorTest extends TestCase {
    */
   public function testOnceConnection() {
     $sender = new Sender();
-    $receiver = new Receiver();
+    $receiver = $this->getMockBuilder(Receiver::class)
+      ->setMethods(['slotOne'])
+      ->getMock();
+
+    $receiver->expects($this->once())
+      ->method('slotOne')
+      ->with('Signal data');
 
     ConnectionManager::connect($sender, 'testSignal', $receiver, 'slotOne', ConnectionManager::CONNECTION_ONE_TIME);
 
     $sender->emit('testSignal', 'Signal data');
     $sender->emit('testSignal', 'Signal data');
-    $this->expectOutputString('Received data (slot 1): Signal data' . PHP_EOL);
   }
 
   /**
@@ -132,7 +185,13 @@ class ConnectorTest extends TestCase {
    */
   public function testDisconnect() {
     $sender = new Sender();
-    $receiver = new Receiver();
+    $receiver = $this->getMockBuilder(Receiver::class)
+      ->setMethods(['slotOne'])
+      ->getMock();
+
+    $receiver->expects($this->once())
+      ->method('slotOne')
+      ->with('Signal data');
 
     ConnectionManager::connect($sender, 'testSignal', $receiver, 'slotOne');
 
@@ -141,7 +200,6 @@ class ConnectorTest extends TestCase {
     ConnectionManager::disconnect($sender, 'testSignal', $receiver, 'slotOne');
 
     $sender->emit('testSignal', 'Signal data');
-    $this->expectOutputString('Received data (slot 1): Signal data' . PHP_EOL);
   }
 
   /**
@@ -153,7 +211,17 @@ class ConnectorTest extends TestCase {
   public function testResetAllConnections() {
     $sender1 = new Sender();
     $sender2 = new Sender();
-    $receiver = new Receiver();
+    $receiver = $this->getMockBuilder(Receiver::class)
+      ->setMethods(['slotOne', 'slotTwo'])
+      ->getMock();
+
+    $receiver->expects($this->exactly(1))
+      ->method('slotOne')
+      ->with('Signal data 1');
+
+    $receiver->expects($this->exactly(1))
+      ->method('slotTwo')
+      ->with('Signal data 2');
 
     ConnectionManager::connect($sender1, 'testSignalOne', $receiver, 'slotOne');
     ConnectionManager::connect($sender2, 'testSignalTwo', $receiver, 'slotTwo');
@@ -165,7 +233,22 @@ class ConnectorTest extends TestCase {
 
     $sender1->emit('testSignalOne', 'Signal data 1');
     $sender2->emit('testSignalTwo', 'Signal data 2');
-    $this->expectOutputString('Received data (slot 1): Signal data 1' . PHP_EOL . 'Received data (slot 2): Signal data 2' . PHP_EOL);
+  }
+
+  /**
+   * Test get connections.
+   */
+  public function testGetConnections() {
+    $sender1 = new Sender();
+    $sender2 = new Sender();
+    $receiver1 = new Receiver();
+    $receiver2 = new Receiver();
+
+    ConnectionManager::connect($sender1, 'testSignalOne', $receiver1, 'slotOne');
+    ConnectionManager::connect($sender2, 'testSignalTwo', $receiver2, 'slotTwo');
+
+    $connections = ConnectionManager::getConnections();
+    $this->assertEquals(2, count($connections));
   }
 
 }
