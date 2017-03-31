@@ -13,11 +13,11 @@ namespace Fluffy\Connector\Tests\Receiver;
 class Receiver {
 
   public function slotOne($data) {
-    echo $data . PHP_EOL;
+    echo 'Slot one: ' . $data . PHP_EOL;
   }
 
   public function slotTwo($data) {
-    echo $data . PHP_EOL;
+    echo 'Slot two: ' . $data . PHP_EOL;
   }
 
 }

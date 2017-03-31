@@ -76,7 +76,7 @@ final class ConnectionManager {
   /**
    * Disconnect receiver's slot from sender's signal.
    *
-   * @param object $sender
+   * @param \Fluffy\Connector\Signal\SignalInterface|object $sender
    *   Object that defines a $signal.
    * @param string $signal
    *   Signal name.
@@ -85,7 +85,7 @@ final class ConnectionManager {
    * @param string $slot
    *   Slot name.
    */
-  public static function disconnect($sender, $signal, $receiver, $slot) {
+  public static function disconnect(SignalInterface $sender, $signal, $receiver, $slot) {
     $sender_hash = spl_object_hash($sender);
 
     // Find and remove connection.

@@ -21,7 +21,7 @@ or add dependency to your composer.json file
 ```javascript
 "require": {
     ...
-    "fluffy/connector": "^1.2"
+    "fluffy/connector": "^1.3"
 }
 ```
 
@@ -86,7 +86,6 @@ class Receiver
 ```
 
 **3. Connections**
-
 For now we have `Logger` class that emits signal and `Receiver` class with a slot. To react on signal with slot you need to connect them to each other. Let's do it.
 ```php
 use Fluffy\Connector\ConnectionManager;
@@ -99,12 +98,27 @@ ConnectionManager::connect($logger, 'somethingIsLogged', $receiver, 'slotReactOn
 $logger->log();
 ```
 
-Since you called `ConnectionManager::connect($sender, $signalName, $receiver, $slotName);` method signal and slot are connected. It means that after call `$logger->log()` the `somethingIsLogged` signal will be emitted and the `slotReactOnSignal` slot will be called. Result will be `"Received data: Some useful data"`. You can connect as many slots to signals as you want. Actually you can create connections like:
+Since you called `ConnectionManager::connect(SignalInterface $sender, $signalName, $receiver, $slotName);` method signal and slot are connected. It means that after call `$logger->log()` the `somethingIsLogged` signal will be emitted and the `slotReactOnSignal` slot will be called. Result will be `"Received data: Some useful data"`. You can connect as many slots to signals as you want. Actually you can create connections like:
 
 * One signal to one slot
 * One signal to many slots
 * Many signals to many slots
 * Many signals to one slot
+
+You can also establish multiple connections by calling `ConnectionManager::initConnections(array $connections);` method:
+```php
+ConnectionManager::initConnections([
+  ...
+  [
+    'sender' => new Logger(),
+    'signal' => 'somethingIsLogged',
+    'receiver' => new Receiver(),
+    'slot' => 'slotReactOnSignal',
+    'type' => ConnectionManager::CONNECTION_PERMANENT,
+  ]
+  ...
+]);
+```
 
 **4. Connection types**
 
@@ -136,16 +150,70 @@ If you want to reset all existing connections call
 ConnectionManager::resetAllConnections()
 ```
 
+**6. Services connections**
+
+If you are using Symfony Dependency Injection component you might don't want to create objects manually but retrieve them from service container instead. For such cases you can connect your services defined in `services.yml` file without any manual object creation. That's how you can achieve this:
+
+1. Let's say you have `services.yml` file with next services:
+```php
+services:
+  service.logger:
+    class: \Logger
+    arguments: [...]
+  service.receiver:
+    class: \Receiver
+    arguments: [...]
+```
+
+2. In order to connect a `\Receiver` slot `slotReactOnSignal` to a `\Logger` signal `somethingIsLogged` create a yaml file somewhere (let's say `services.connections.yml`) in you project with next content:
+```yml
+# Connection name. Can be any string.
+test_connection_one:
+  # Sender service id from "services.yml" file.
+  sender: service.logger
+  # Sender's signal.
+  signal: somethingIsLogged
+  # Receiver service id from "services.yml" file.
+  receiver: service.receiver
+  # Receiver's slot.
+  slot: slotReactOnSignal
+  # Connection type. 0 - "permanent". 1 - "one time".
+  # You can ommit "type" parameter and it will be
+  # "permanent" by default.
+  type: 0
+
+  # You can define as many connections as you want.
+  ...
+```
+
+3. Initialize service connections:
+```php
+// Here you need to pass a yaml string from file and a service container.
+// This should be done once somewhere in a front controller of your
+// application.
+$serviceConnections = ConnectionManager::parseServicesConnections(file_get_contents('services.connections.yml'), $container);
+ConnectionManager::initConnections($serviceConnections);
+```
+
+4. Now yor `\Logger` service is ready to emit signals and `\Receiver` service is ready to react on signals:
+```php
+// Receiver will respond to signal "somethingIsLogged" with a slot defined in "services.connections.yml".
+$container->get('service.logger')->emit('somethingIsLogged', 'Signal data');
+```
+
 # Tests
+Please [see tests](https://github.com/PavelLoparev/connector/tree/master/tests) for more information and use-cases.
+
+in order to run tests type:
 `$ composer install`
 
-`$ phpunit`
+`$ ./vendor/bin/phpunit `
 
 # What for?
 I just like Qt's signal and slot system and want to bring it into PHP world.
 
 # Any advantages?
-It's lightweight and doesn't have any dependencies.
-
+* It's lightweight.
+* Depends only on one third party library: symfony/yaml
 # License
 GPLv3. See LICENSE file.

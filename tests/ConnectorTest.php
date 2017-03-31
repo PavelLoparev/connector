@@ -151,12 +151,12 @@ class ConnectorTest extends TestCase {
   }
 
   /**
-   * Test connection type: once.
+   * Test connection type: one time.
    *
    * Connection with type "CONNECTION_ONE_TIME" will be disconnected after first
    * signal emission.
    */
-  public function testOnceConnection() {
+  public function testOneTimeConnection() {
     $sender = new Sender();
     $receiver = $this->getMockBuilder(Receiver::class)
       ->setMethods(['slotOne'])
@@ -449,9 +449,9 @@ class ConnectorTest extends TestCase {
   }
 
   /**
-   * Test service connections parsing.
+   * Test services connections.
    */
-  public function testServicesConnectionsParsing() {
+  public function testServicesConnections() {
     $container = new ContainerBuilder();
     $serviceLoader = new YamlFileLoader($container, new FileLocator(__DIR__));
     $serviceLoader->load('services.yml');
@@ -460,13 +460,29 @@ class ConnectorTest extends TestCase {
     ConnectionManager::initConnections($serviceConnections);
 
     $container->get('service.sender')->emit('testSignal', 'Signal data');
-    $this->expectOutputString('Signal data' . PHP_EOL . 'Signal data' . PHP_EOL);
+    $this->expectOutputString('Slot one: Signal data' . PHP_EOL . 'Slot two: Signal data' . PHP_EOL);
 
     // Second connection is "one-time" so after this emission string
     // will contain only three 'Signal data' sub-strings. See
     // services.connections.yml.
     $container->get('service.sender')->emit('testSignal', 'Signal data');
-    $this->expectOutputString('Signal data' . PHP_EOL . 'Signal data' . PHP_EOL . 'Signal data' . PHP_EOL);
+    $this->expectOutputString('Slot one: Signal data' . PHP_EOL . 'Slot two: Signal data' . PHP_EOL . 'Slot one: Signal data' . PHP_EOL);
+  }
+
+  /**
+   * Test services disconnect.
+   */
+  public function testServicesDisconnect() {
+    $container = new ContainerBuilder();
+    $serviceLoader = new YamlFileLoader($container, new FileLocator(__DIR__));
+    $serviceLoader->load('services.yml');
+
+    $serviceConnections = ConnectionManager::parseServicesConnections(file_get_contents(__DIR__ . '/services.connections.yml'), $container);
+    ConnectionManager::initConnections($serviceConnections);
+    ConnectionManager::disconnect($container->get('service.sender'), 'testSignal', $container->get('service.receiver'), 'slotTwo');
+
+    $container->get('service.sender')->emit('testSignal', 'Signal data');
+    $this->expectOutputString('Slot one: Signal data' . PHP_EOL);
   }
 
   /**
