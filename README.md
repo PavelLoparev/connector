@@ -204,7 +204,7 @@ $container->get('service.logger')->emit('somethingIsLogged', 'Signal data');
 # Tests
 Please [see tests](https://github.com/PavelLoparev/connector/blob/master/tests/ConnectorTest.php) for more information and use-cases.
 
-in order to run tests type:
+In order to run tests type:
 
 `$ composer install`
 
