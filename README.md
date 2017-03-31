@@ -152,7 +152,7 @@ ConnectionManager::resetAllConnections()
 
 **6. Services connections**
 
-If you are using Symfony Dependency Injection component you might don't want to create objects manually but retrieve them from service container instead. For such cases you can connect your services defined in `services.yml` file without any manual object creation. That's how you can achieve this:
+If you are using `Symfony Dependency Injection` component you might don't want to create objects manually but retrieve them from service container instead. For such cases you can connect your services defined in `services.yml` file without any manual object creation. That's how you can achieve this:
 
 1. Let's say you have `services.yml` file with next services:
 ```php
@@ -178,7 +178,7 @@ test_connection_one:
   # Receiver's slot.
   slot: slotReactOnSignal
   # Connection type. 0 - "permanent". 1 - "one time".
-  # You can ommit "type" parameter and it will be
+  # You can omit "type" parameter and it will be
   # "permanent" by default.
   type: 0
 
@@ -202,9 +202,10 @@ $container->get('service.logger')->emit('somethingIsLogged', 'Signal data');
 ```
 
 # Tests
-Please [see tests](https://github.com/PavelLoparev/connector/tree/master/tests) for more information and use-cases.
+Please [see tests](https://github.com/PavelLoparev/connector/blob/master/tests/ConnectorTest.php) for more information and use-cases.
 
 in order to run tests type:
+
 `$ composer install`
 
 `$ ./vendor/bin/phpunit `
@@ -214,6 +215,6 @@ I just like Qt's signal and slot system and want to bring it into PHP world.
 
 # Any advantages?
 * It's lightweight.
-* Depends only on one third party library: symfony/yaml
+* Depends only on one third party library: `symfony/yaml`
 # License
 GPLv3. See LICENSE file.
