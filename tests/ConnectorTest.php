@@ -5,13 +5,13 @@
  * Contains definition of ConnectorTest class.
  */
 
-namespace Fluffy\Tests;
+namespace Fluffy\Connector\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Fluffy\Connector\ConnectionManager;
-use Fluffy\Tests\Sender\Sender;
-use Fluffy\Tests\Receiver\Receiver;
 use RuntimeException;
+use Fluffy\Connector\ConnectionManager;
+use Fluffy\Connector\Tests\Sender\Sender;
+use Fluffy\Connector\Tests\Receiver\Receiver;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
@@ -21,14 +21,7 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
  */
 class ConnectorTest extends TestCase {
 
-  private $container;
-
   public function setUp() {
-    $container = new ContainerBuilder();
-    $serviceLoader = new YamlFileLoader($container, new FileLocator(__DIR__));
-    $serviceLoader->load('services.yml');
-    $this->container = $container;
-
     ConnectionManager::resetAllConnections();
   }
 
@@ -453,6 +446,41 @@ class ConnectorTest extends TestCase {
         ],
       ]
     ];
+  }
+
+  /**
+   * Test service connections parsing.
+   */
+  public function testServicesConnectionsParsing() {
+    $container = new ContainerBuilder();
+    $serviceLoader = new YamlFileLoader($container, new FileLocator(__DIR__));
+    $serviceLoader->load('services.yml');
+
+    $serviceConnections = ConnectionManager::parseServicesConnections(file_get_contents(__DIR__ . '/services.connections.yml'), $container);
+    ConnectionManager::initConnections($serviceConnections);
+
+    $container->get('service.sender')->emit('testSignal', 'Signal data');
+    $this->expectOutputString('Signal data' . PHP_EOL . 'Signal data' . PHP_EOL);
+
+    // Second connection is "one-time" so after this emission string
+    // will contain only three 'Signal data' sub-strings. See
+    // services.connections.yml.
+    $container->get('service.sender')->emit('testSignal', 'Signal data');
+    $this->expectOutputString('Signal data' . PHP_EOL . 'Signal data' . PHP_EOL . 'Signal data' . PHP_EOL);
+  }
+
+  /**
+   * Test malformed service connections parsing.
+   */
+  public function testMalformedServicesConnectionsParsing() {
+    $container = new ContainerBuilder();
+    $serviceLoader = new YamlFileLoader($container, new FileLocator(__DIR__));
+    $serviceLoader->load('services.yml');
+
+    $serviceConnections = ConnectionManager::parseServicesConnections('test: test' . PHP_EOL . 'test', $container);
+    ConnectionManager::initConnections($serviceConnections);
+
+    $this->assertEquals([], $serviceConnections);
   }
 
 }

@@ -1,5 +1,5 @@
 services:
   service.receiver:
-    class: Fluffy\Tests\Receiver\Receiver
+    class: Fluffy\Connector\Tests\Receiver\Receiver
   service.sender:
-    class: Fluffy\Tests\Sender\Sender
+    class: Fluffy\Connector\Tests\Sender\Sender

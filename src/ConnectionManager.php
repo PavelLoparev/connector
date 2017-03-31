@@ -9,6 +9,9 @@ namespace Fluffy\Connector;
 
 use Fluffy\Connector\Signal\SignalInterface;
 use RuntimeException;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\Yaml\Exception\ParseException;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Class ConnectionManager
@@ -32,43 +35,6 @@ final class ConnectionManager {
   private static $connections = [];
 
   /**
-   * Initializes multiple connections.
-   *
-   * @param array $connections
-   */
-  public static function initConnections(array $connections) {
-    foreach ($connections as $connection) {
-      if (empty($connection['sender']) ||
-        empty($connection['signal']) ||
-        empty($connection['receiver']) ||
-        empty($connection['slot'])
-      ) {
-        throw new RuntimeException('Malformed connection.');
-      }
-
-      if (!empty($connection['type'])) {
-        if (!in_array($connection['type'], [
-            ConnectionManager::CONNECTION_PERMANENT,
-            ConnectionManager::CONNECTION_ONE_TIME,
-          ]
-        )) {
-          throw new RuntimeException("Unknown connection type.");
-        }
-      }
-      else {
-        $connection['type'] = ConnectionManager::CONNECTION_PERMANENT;
-      }
-
-      ConnectionManager::connect($connection['sender'],
-        $connection['signal'],
-        $connection['receiver'],
-        $connection['slot'],
-        $connection['type']
-      );
-    }
-  }
-
-  /**
    * Connect sender's signal to receiver's slot.
    *
    * @param \Fluffy\Connector\Signal\SignalInterface|object $sender
@@ -83,7 +49,7 @@ final class ConnectionManager {
    *   Connection type. CONNECTION_PERMANENT will work until it is disconnected.
    *   CONNECTION_ONE_TIME will work only once.
    */
-  public static function connect(SignalInterface $sender, $signal, $receiver, $slot, $connection_type = self::CONNECTION_PERMANENT) {
+  public static function connect(SignalInterface $sender, $signal, $receiver, $slot, $connection_type = ConnectionManager::CONNECTION_PERMANENT) {
     $sender_hash = spl_object_hash($sender);
     $connection_item = [
       'receiver' => $receiver,
@@ -139,6 +105,73 @@ final class ConnectionManager {
   }
 
   /**
+   * Initializes multiple connections.
+   *
+   * @param array $connections
+   *   Array contains connection descriptions.
+   */
+  public static function initConnections(array $connections) {
+    foreach ($connections as $connection) {
+      if (empty($connection['sender']) ||
+        empty($connection['signal']) ||
+        empty($connection['receiver']) ||
+        empty($connection['slot'])
+      ) {
+        throw new RuntimeException('Malformed connection.');
+      }
+
+      if (!empty($connection['type'])) {
+        if (!in_array($connection['type'], [
+            ConnectionManager::CONNECTION_PERMANENT,
+            ConnectionManager::CONNECTION_ONE_TIME,
+          ]
+        )) {
+          throw new RuntimeException("Unknown connection type.");
+        }
+      }
+      else {
+        $connection['type'] = ConnectionManager::CONNECTION_PERMANENT;
+      }
+
+      ConnectionManager::connect($connection['sender'],
+        $connection['signal'],
+        $connection['receiver'],
+        $connection['slot'],
+        $connection['type']
+      );
+    }
+  }
+
+  /**
+   * @param string $yaml
+   *   Yaml string to parse.
+   * @param \Symfony\Component\DependencyInjection\ContainerInterface $container
+   *   Symfony service container.
+   *
+   * @return mixed
+   */
+  public static function parseServicesConnections($yaml, ContainerInterface $container) {
+    try {
+      $connections = Yaml::parse($yaml);
+
+      foreach ($connections as &$connection) {
+        if (!empty($connection['sender'])) {
+          $connection['sender'] = $container->get($connection['sender']);
+        }
+
+        if (!empty($connection['receiver'])) {
+          $connection['receiver'] = $container->get($connection['receiver']);
+        }
+      }
+    }
+    catch (ParseException $e) {
+      $connections = [];
+    }
+
+    return $connections;
+  }
+
+  /**
    * Returns all defined connections.
    *
    * @return array
@@ -154,4 +187,5 @@ final class ConnectionManager {
   public static function resetAllConnections() {
     self::$connections = [];
   }
+
 }
