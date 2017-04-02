@@ -26,6 +26,1076 @@ class ConnectorTest extends TestCase {
   }
 
   /**
+   * Test correct connections structure.
+   *
+   * @param $connections
+   * @param $expectations
+   * @dataProvider ifConnectionsAreCorrectProvider
+   */
+  public function testIfConnectionsAreCorrect($connections, $expectations) {
+    ConnectionManager::initConnections($connections);
+    $actualConnections = ConnectionManager::getConnections();
+
+    $sendersCount = count($actualConnections);
+    $signalsCount = 0;
+    $receiversCount = 0;
+
+    foreach ($actualConnections as $signals) {
+      $signalsCount += count($signals);
+
+      foreach ($signals as $signal) {
+        $receiversCount += count($signal);
+      }
+    }
+
+    $this->assertEquals($expectations['senders'], $sendersCount, 'Amount of senders is ok');
+    $this->assertEquals($expectations['signals'], $signalsCount, 'Amount of signals is ok');
+    $this->assertEquals($expectations['receivers'], $receiversCount, 'Amount of receivers is ok');
+  }
+
+  public function ifConnectionsAreCorrectProvider() {
+    $sender1 = new Sender();
+    $sender2 = new Sender();
+    $sender3 = new Sender();
+    $signal1 = 'testSignal1';
+    $signal2 = 'testSignal2';
+    $signal3 = 'testSignal3';
+    $receiver1 = new Receiver();
+    $receiver2 = new Receiver();
+    $receiver3 = new Receiver();
+    $slot1 = 'testSlot1';
+    $slot2 = 'testSlot2';
+    $slot3 = 'testSlot3';
+
+    return [
+      // All keys are different.
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender2,
+            'signal' => $signal2,
+            'receiver' => $receiver2,
+            'slot' => $slot2,
+          ],
+        ],
+        [
+          'senders' => 2,
+          'signals' => 2,
+          'receivers' => 2,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender2,
+            'signal' => $signal2,
+            'receiver' => $receiver2,
+            'slot' => $slot2,
+          ],
+          [
+            'sender' => $sender3,
+            'signal' => $signal3,
+            'receiver' => $receiver3,
+            'slot' => $slot3,
+          ],
+        ],
+        [
+          'senders' => 3,
+          'signals' => 3,
+          'receivers' => 3,
+        ],
+      ],
+      // Same sender. Different signal, receiver and slot.
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal2,
+            'receiver' => $receiver2,
+            'slot' => $slot2,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 2,
+          'receivers' => 2,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => 'testSignal1',
+            'receiver' => new Receiver(),
+            'slot' => 'slot1',
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal2,
+            'receiver' => $receiver2,
+            'slot' => $slot2,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal3,
+            'receiver' => $receiver3,
+            'slot' => $slot3,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 3,
+          'receivers' => 3,
+        ],
+      ],
+      // Same signal. Different sender, receiver and slot.
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender2,
+            'signal' => $signal1,
+            'receiver' => $receiver2,
+            'slot' => $slot2,
+          ],
+        ],
+        [
+          'senders' => 2,
+          'signals' => 2,
+          'receivers' => 2,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender2,
+            'signal' => $signal1,
+            'receiver' => $receiver2,
+            'slot' => $slot2,
+          ],
+          [
+            'sender' => $sender3,
+            'signal' => $signal1,
+            'receiver' => $receiver3,
+            'slot' => $slot3,
+          ],
+        ],
+        [
+          'senders' => 3,
+          'signals' => 3,
+          'receivers' => 3,
+        ],
+      ],
+      // Same receiver. Different sender, signal and slot.
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender2,
+            'signal' => $signal2,
+            'receiver' => $receiver1,
+            'slot' => $slot2,
+          ],
+        ],
+        [
+          'senders' => 2,
+          'signals' => 2,
+          'receivers' => 2,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender2,
+            'signal' => $signal2,
+            'receiver' => $receiver1,
+            'slot' => $slot2,
+          ],
+          [
+            'sender' => $sender3,
+            'signal' => $signal3,
+            'receiver' => $receiver1,
+            'slot' => $slot3,
+          ],
+        ],
+        [
+          'senders' => 3,
+          'signals' => 3,
+          'receivers' => 3,
+        ],
+      ],
+      // Same slot. Different sender, signal and receiver.
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender2,
+            'signal' => $signal2,
+            'receiver' => $receiver2,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 2,
+          'signals' => 2,
+          'receivers' => 2,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender2,
+            'signal' => $signal2,
+            'receiver' => $receiver2,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender3,
+            'signal' => $signal3,
+            'receiver' => $receiver3,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 3,
+          'signals' => 3,
+          'receivers' => 3,
+        ],
+      ],
+      // Same sender and signal. Different slot and receiver.
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver2,
+            'slot' => $slot2,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 2,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver2,
+            'slot' => $slot2,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver3,
+            'slot' => $slot3,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 3,
+        ],
+      ],
+      // Same sender and receiver. Different slot and signal.
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal2,
+            'receiver' => $receiver1,
+            'slot' => $slot2,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 2,
+          'receivers' => 2,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal2,
+            'receiver' => $receiver1,
+            'slot' => $slot2,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal3,
+            'receiver' => $receiver1,
+            'slot' => $slot3,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 3,
+          'receivers' => 3,
+        ],
+      ],
+      // Same sender and slot. Different receiver and signal.
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal2,
+            'receiver' => $receiver2,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 2,
+          'receivers' => 2,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal2,
+            'receiver' => $receiver2,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal3,
+            'receiver' => $receiver3,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 3,
+          'receivers' => 3,
+        ],
+      ],
+      // Same signal and receiver. Different sender and slot.
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender2,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot2,
+          ],
+        ],
+        [
+          'senders' => 2,
+          'signals' => 2,
+          'receivers' => 2,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender2,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot2,
+          ],
+          [
+            'sender' => $sender3,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot3,
+          ],
+        ],
+        [
+          'senders' => 3,
+          'signals' => 3,
+          'receivers' => 3,
+        ],
+      ],
+      // Same signal and slot. Different sender and receiver.
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender2,
+            'signal' => $signal1,
+            'receiver' => $receiver2,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 2,
+          'signals' => 2,
+          'receivers' => 2,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender2,
+            'signal' => $signal1,
+            'receiver' => $receiver2,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender3,
+            'signal' => $signal1,
+            'receiver' => $receiver3,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 3,
+          'signals' => 3,
+          'receivers' => 3,
+        ],
+      ],
+      // Same receiver and slot. Different sender and signal.
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender2,
+            'signal' => $signal2,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 2,
+          'signals' => 2,
+          'receivers' => 2,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender2,
+            'signal' => $signal2,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender3,
+            'signal' => $signal3,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 3,
+          'signals' => 3,
+          'receivers' => 3,
+        ],
+      ],
+      // Same sender, signal and receiver. Different slot.
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot2,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 2,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot2,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot3,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 3,
+        ],
+      ],
+      // Same sender, receiver and slot. Different signal.
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal2,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 2,
+          'receivers' => 2,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal2,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal3,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 3,
+          'receivers' => 3,
+        ],
+      ],
+      // Same sender, signal and slot. Different receiver.
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver2,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 2,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver2,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver3,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 3,
+        ],
+      ],
+      // Same signal, receiver and slot. Different sender.
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender2,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 2,
+          'signals' => 2,
+          'receivers' => 2,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender2,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender3,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 3,
+          'signals' => 3,
+          'receivers' => 3,
+        ],
+      ],
+      // All keys are the same.
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+      [
+        [
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+          [
+            'sender' => $sender1,
+            'signal' => $signal1,
+            'receiver' => $receiver1,
+            'slot' => $slot1,
+          ],
+        ],
+        [
+          'senders' => 1,
+          'signals' => 1,
+          'receivers' => 1,
+        ],
+      ],
+    ];
+  }
+
+  /**
    * Test connection from one signal to one slot.
    *
    * One sender emits signal. One receiver reacts on one signal.
@@ -227,22 +1297,6 @@ class ConnectorTest extends TestCase {
 
     $sender1->emit('testSignalOne', 'Signal data 1');
     $sender2->emit('testSignalTwo', 'Signal data 2');
-  }
-
-  /**
-   * Test get connections.
-   */
-  public function testGetConnections() {
-    $sender1 = new Sender();
-    $sender2 = new Sender();
-    $receiver1 = new Receiver();
-    $receiver2 = new Receiver();
-
-    ConnectionManager::connect($sender1, 'testSignalOne', $receiver1, 'slotOne');
-    ConnectionManager::connect($sender2, 'testSignalTwo', $receiver2, 'slotTwo');
-
-    $connections = ConnectionManager::getConnections();
-    $this->assertEquals(2, count($connections));
   }
 
   /**

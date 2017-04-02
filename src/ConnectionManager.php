@@ -64,10 +64,17 @@ final class ConnectionManager {
     else {
       // Add new connection for same signal and receiver.
       if (!empty(self::$connections[$sender_hash][$signal])) {
+        $add_connection = TRUE;
+
         foreach (self::$connections[$sender_hash][$signal] as $connection) {
-          if ($connection['slot'] != $slot) {
-            self::$connections[$sender_hash][$signal][] = $connection_item;
+          if (spl_object_hash($connection['receiver']) == spl_object_hash($receiver) && $connection['slot'] == $slot) {
+            $add_connection = FALSE;
+            break;
           }
+        }
+
+        if (!empty($add_connection)) {
+          self::$connections[$sender_hash][$signal][] = $connection_item;
         }
       }
     }
