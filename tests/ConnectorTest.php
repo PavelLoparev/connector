@@ -53,6 +53,10 @@ class ConnectorTest extends TestCase {
     $this->assertEquals($expectations['receivers'], $receiversCount, 'Amount of receivers is ok');
   }
 
+  /**
+   * Data provider for testIfConnectionsAreCorrect() test.
+   * @return array
+   */
   public function ifConnectionsAreCorrectProvider() {
     $sender1 = new Sender();
     $sender2 = new Sender();
@@ -1119,106 +1123,502 @@ class ConnectorTest extends TestCase {
   }
 
   /**
-   * Test connection from one signal to one slot.
+   * Test connection.
    *
-   * One sender emits signal. One receiver reacts on one signal.
+   * One sender, one signal, one receiver, one slot.
    */
-  public function testOneToOneConnection() {
+  public function testOneSenderOneSignalToOneReceiverOneSlot() {
+    $slot = 'slotOne';
+    $signal = 'testSignal';
+    $data = 'Signal data';
     $sender = new Sender();
     $receiver = $this->getMockBuilder(Receiver::class)
-      ->setMethods(['slotOne'])
+      ->setMethods([$slot])
       ->getMock();
 
     $receiver->expects($this->once())
-      ->method('slotOne')
-      ->with('Signal data');
+      ->method($slot)
+      ->with($data);
 
-    ConnectionManager::connect($sender, 'testSignal', $receiver, 'slotOne');
+    ConnectionManager::connect($sender, $signal, $receiver, $slot);
 
-    $sender->emit('testSignal', 'Signal data');
+    $sender->emit($signal, $data);
   }
 
   /**
-   * Test connection from one signal to many slots.
+   * Test connection.
    *
-   * One sender emits signal. Two receivers react on one signal.
+   * Many senders, one signal, one receiver, one slot.
    */
-  public function testOneToManyConnection() {
-    $sender = new Sender();
-    $receiver1 = $this->getMockBuilder(Receiver::class)
-      ->setMethods(['slotOne'])
-      ->getMock();
-
-    $receiver1->expects($this->once())
-      ->method('slotOne')
-      ->with('Signal data');
-
-    $receiver2 = $this->getMockBuilder(Receiver::class)
-      ->setMethods(['slotTwo'])
-      ->getMock();
-
-    $receiver2->expects($this->once())
-      ->method('slotTwo')
-      ->with('Signal data');
-
-    ConnectionManager::connect($sender, 'testSignal', $receiver1, 'slotOne');
-    ConnectionManager::connect($sender, 'testSignal', $receiver2, 'slotTwo');
-
-    $sender->emit('testSignal', 'Signal data');
-  }
-
-  /**
-   * Test connection from many signals to many slots.
-   *
-   * Two senders emit signals. Two receivers react on signals.
-   */
-  public function testManyToManyConnection() {
-    $sender1 = new Sender();
-    $sender2 = new Sender();
-    $receiver1 = $this->getMockBuilder(Receiver::class)
-      ->setMethods(['slotOne'])
-      ->getMock();
-
-    $receiver1->expects($this->once())
-      ->method('slotOne')
-      ->with('Signal data 1');
-
-    $receiver2 = $this->getMockBuilder(Receiver::class)
-      ->setMethods(['slotTwo'])
-      ->getMock();
-
-    $receiver2->expects($this->once())
-      ->method('slotTwo')
-      ->with('Signal data 2');
-
-    ConnectionManager::connect($sender1, 'testSignalOne', $receiver1, 'slotOne');
-    ConnectionManager::connect($sender2, 'testSignalTwo', $receiver2, 'slotTwo');
-
-    $sender1->emit('testSignalOne', 'Signal data 1');
-    $sender2->emit('testSignalTwo', 'Signal data 2');
-  }
-
-  /**
-   * Test connection from many signals to one slot.
-   *
-   * Two senders emit signals. One receiver reacts on signals.
-   */
-  public function testManyToOneConnection() {
+  public function testManySendersOneSignalToOneReceiverOneSlot() {
+    $slot = 'slotOne';
+    $signal = 'testSignal';
+    $data = 'Signal data';
     $sender1 = new Sender();
     $sender2 = new Sender();
     $receiver = $this->getMockBuilder(Receiver::class)
-      ->setMethods(['slotOne'])
+      ->setMethods([$slot])
       ->getMock();
 
     $receiver->expects($this->exactly(2))
-      ->method('slotOne')
-      ->withConsecutive(['Signal data 1'], ['Signal data 2']);
+      ->method($slot)
+      ->with($data);
 
-    ConnectionManager::connect($sender1, 'testSignalOne', $receiver, 'slotOne');
-    ConnectionManager::connect($sender2, 'testSignalTwo', $receiver, 'slotOne');
+    ConnectionManager::connect($sender1, $signal, $receiver, $slot);
+    ConnectionManager::connect($sender2, $signal, $receiver, $slot);
 
-    $sender1->emit('testSignalOne', 'Signal data 1');
-    $sender2->emit('testSignalTwo', 'Signal data 2');
+    $sender1->emit($signal, $data);
+    $sender2->emit($signal, $data);
+  }
+
+  /**
+   * Test connection.
+   *
+   * One sender, many signals, one receiver, one slot.
+   */
+  public function testOneSenderManySignalsToOneReceiverOneSlot() {
+    $slot = 'slotOne';
+    $signal1 = 'testSignal1';
+    $signal2 = 'testSignal2';
+    $data = 'Signal data';
+    $sender = new Sender();
+    $receiver = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot])
+      ->getMock();
+
+    $receiver->expects($this->exactly(2))
+      ->method($slot)
+      ->with($data);
+
+    ConnectionManager::connect($sender, $signal1, $receiver, $slot);
+    ConnectionManager::connect($sender, $signal2, $receiver, $slot);
+
+    $sender->emit($signal1, $data);
+    $sender->emit($signal2, $data);
+  }
+
+  /**
+   * Test connection.
+   *
+   * One sender, one signal, many receivers, one slot.
+   */
+  public function testOneSenderOneSignalToManyReceiversOneSlot() {
+    $slot = 'slotOne';
+    $signal = 'testSignal';
+    $data = 'Signal data';
+    $sender = new Sender();
+    $receiver1 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot])
+      ->getMock();
+
+    $receiver1->expects($this->exactly(1))
+      ->method($slot)
+      ->with($data);
+
+    $receiver2 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot])
+      ->getMock();
+
+    $receiver2->expects($this->exactly(1))
+      ->method($slot)
+      ->with($data);
+
+    ConnectionManager::connect($sender, $signal, $receiver1, $slot);
+    ConnectionManager::connect($sender, $signal, $receiver2, $slot);
+
+    $sender->emit($signal, $data);
+  }
+
+  /**
+   * Test connection.
+   *
+   * One sender, one signal, one receiver, many slots.
+   */
+  public function testOneSenderOneSignalToOneReceiverManySlots() {
+    $slot1 = 'slotOne';
+    $slot2 = 'slotTwo';
+    $signal = 'testSignal';
+    $data = 'Signal data';
+    $sender = new Sender();
+    $receiver = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot1, $slot2])
+      ->getMock();
+
+    $receiver->expects($this->exactly(1))
+      ->method($slot1)
+      ->with($data);
+
+    $receiver->expects($this->exactly(1))
+      ->method($slot2)
+      ->with($data);
+
+    ConnectionManager::connect($sender, $signal, $receiver, $slot1);
+    ConnectionManager::connect($sender, $signal, $receiver, $slot2);
+
+    $sender->emit($signal, $data);
+  }
+
+  /**
+   * Test connection.
+   *
+   * Many senders, many signals, one receiver, one slot.
+   */
+  public function testManySendersManySignalsToOneReceiverOneSlot() {
+    $slot = 'slotOne';
+    $signal1 = 'testSignal1';
+    $signal2 = 'testSignal2';
+    $data = 'Signal data';
+    $sender1 = new Sender();
+    $sender2 = new Sender();
+    $receiver = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot])
+      ->getMock();
+
+    $receiver->expects($this->exactly(2))
+      ->method($slot)
+      ->with($data);
+
+    ConnectionManager::connect($sender1, $signal1, $receiver, $slot);
+    ConnectionManager::connect($sender2, $signal2, $receiver, $slot);
+
+    $sender1->emit($signal1, $data);
+    $sender2->emit($signal2, $data);
+  }
+
+  /**
+   * Test connection.
+   *
+   * Many senders, one signal, many receivers, one slot.
+   */
+  public function testManySendersOneSignalToManyReceiversOneSlot() {
+    $slot = 'slotOne';
+    $signal = 'testSignal';
+    $data = 'Signal data';
+    $sender1 = new Sender();
+    $sender2 = new Sender();
+    $receiver1 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot])
+      ->getMock();
+
+    $receiver1->expects($this->exactly(1))
+      ->method($slot)
+      ->with($data);
+
+    $receiver2 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot])
+      ->getMock();
+
+    $receiver2->expects($this->exactly(1))
+      ->method($slot)
+      ->with($data);
+
+    ConnectionManager::connect($sender1, $signal, $receiver1, $slot);
+    ConnectionManager::connect($sender2, $signal, $receiver2, $slot);
+
+    $sender1->emit($signal, $data);
+    $sender2->emit($signal, $data);
+  }
+
+  /**
+   * Test connection.
+   *
+   * Many senders, one signal, one receiver, many slots.
+   */
+  public function testManySendersOneSignalToOneReceiverManySlots() {
+    $slot1 = 'slotOne';
+    $slot2 = 'slotTwo';
+    $signal = 'testSignal';
+    $data = 'Signal data';
+    $sender1 = new Sender();
+    $sender2 = new Sender();
+    $receiver = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot1, $slot2])
+      ->getMock();
+
+    $receiver->expects($this->exactly(1))
+      ->method($slot1)
+      ->with($data);
+
+    $receiver->expects($this->exactly(1))
+      ->method($slot2)
+      ->with($data);
+
+    ConnectionManager::connect($sender1, $signal, $receiver, $slot1);
+    ConnectionManager::connect($sender2, $signal, $receiver, $slot2);
+
+    $sender1->emit($signal, $data);
+    $sender2->emit($signal, $data);
+  }
+
+  /**
+   * Test connection.
+   *
+   * One sender, many signals, many receivers, one slot.
+   */
+  public function testOneSenderManySignalsToManyReceiversOneSlot() {
+    $slot = 'slotOne';
+    $signal1 = 'testSignal1';
+    $signal2 = 'testSignal2';
+    $data = 'Signal data';
+    $sender = new Sender();
+    $receiver1 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot])
+      ->getMock();
+
+    $receiver1->expects($this->exactly(1))
+      ->method($slot)
+      ->with($data);
+
+    $receiver2 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot])
+      ->getMock();
+
+    $receiver2->expects($this->exactly(1))
+      ->method($slot)
+      ->with($data);
+
+    ConnectionManager::connect($sender, $signal1, $receiver1, $slot);
+    ConnectionManager::connect($sender, $signal2, $receiver2, $slot);
+
+    $sender->emit($signal1, $data);
+    $sender->emit($signal2, $data);
+  }
+
+  /**
+   * Test connection.
+   *
+   * One sender, many signals, one receiver, many slots.
+   */
+  public function testOneSenderManySignalsToOneReceiverManySlots() {
+    $slot1 = 'slotOne';
+    $slot2 = 'slotTwo';
+    $signal1 = 'testSignal1';
+    $signal2 = 'testSignal2';
+    $data = 'Signal data';
+    $sender = new Sender();
+    $receiver = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot1, $slot2])
+      ->getMock();
+
+    $receiver->expects($this->exactly(1))
+      ->method($slot1)
+      ->with($data);
+
+    $receiver->expects($this->exactly(1))
+      ->method($slot2)
+      ->with($data);
+
+    ConnectionManager::connect($sender, $signal1, $receiver, $slot1);
+    ConnectionManager::connect($sender, $signal2, $receiver, $slot2);
+
+    $sender->emit($signal1, $data);
+    $sender->emit($signal2, $data);
+  }
+
+  /**
+   * Test connection.
+   *
+   * One sender, one signal, many receivers, many slots.
+   */
+  public function testOneSenderOneSignalToManyReceiversManySlots() {
+    $slot1 = 'slotOne';
+    $slot2 = 'slotTwo';
+    $signal = 'testSignal';
+    $data = 'Signal data';
+    $sender = new Sender();
+    $receiver1 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot1])
+      ->getMock();
+
+    $receiver1->expects($this->exactly(1))
+      ->method($slot1)
+      ->with($data);
+
+    $receiver2 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot2])
+      ->getMock();
+
+    $receiver2->expects($this->exactly(1))
+      ->method($slot2)
+      ->with($data);
+
+    ConnectionManager::connect($sender, $signal, $receiver1, $slot1);
+    ConnectionManager::connect($sender, $signal, $receiver2, $slot2);
+
+    $sender->emit($signal, $data);
+  }
+
+  /**
+   * Test connection.
+   *
+   * Many senders, many signals, many receivers, one slot.
+   */
+  public function testManySendersManySignalsToManyReceiversOneSlot() {
+    $slot = 'slotOne';
+    $signal1 = 'testSignal1';
+    $signal2 = 'testSignal2';
+    $data = 'Signal data';
+    $sender1 = new Sender();
+    $sender2 = new Sender();
+    $receiver1 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot])
+      ->getMock();
+
+    $receiver1->expects($this->exactly(1))
+      ->method($slot)
+      ->with($data);
+
+    $receiver2 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot])
+      ->getMock();
+
+    $receiver2->expects($this->exactly(1))
+      ->method($slot)
+      ->with($data);
+
+    ConnectionManager::connect($sender1, $signal1, $receiver1, $slot);
+    ConnectionManager::connect($sender2, $signal2, $receiver2, $slot);
+
+    $sender1->emit($signal1, $data);
+    $sender2->emit($signal2, $data);
+  }
+
+  /**
+   * Test connection.
+   *
+   * Many senders, one signal, many receivers, many slots.
+   */
+  public function testManySendersOneSignalToManyReceiversManySlots() {
+    $slot1 = 'slotOne';
+    $slot2 = 'slotTwo';
+    $signal = 'testSignal';
+    $data = 'Signal data';
+    $sender1 = new Sender();
+    $sender2 = new Sender();
+    $receiver1 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot1])
+      ->getMock();
+
+    $receiver1->expects($this->exactly(1))
+      ->method($slot1)
+      ->with($data);
+
+    $receiver2 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot2])
+      ->getMock();
+
+    $receiver2->expects($this->exactly(1))
+      ->method($slot2)
+      ->with($data);
+
+    ConnectionManager::connect($sender1, $signal, $receiver1, $slot1);
+    ConnectionManager::connect($sender2, $signal, $receiver2, $slot2);
+
+    $sender1->emit($signal, $data);
+    $sender2->emit($signal, $data);
+  }
+
+  /**
+   * Test connection.
+   *
+   * Many senders, many signals, one receiver, many slots.
+   */
+  public function testManySendersManySignalsToOneReceiverManySlots() {
+    $slot1 = 'slotOne';
+    $slot2 = 'slotTwo';
+    $signal1 = 'testSignal1';
+    $signal2 = 'testSignal2';
+    $data = 'Signal data';
+    $sender1 = new Sender();
+    $sender2 = new Sender();
+    $receiver = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot1, $slot2])
+      ->getMock();
+
+    $receiver->expects($this->exactly(1))
+      ->method($slot1)
+      ->with($data);
+
+    $receiver->expects($this->exactly(1))
+      ->method($slot2)
+      ->with($data);
+
+    ConnectionManager::connect($sender1, $signal1, $receiver, $slot1);
+    ConnectionManager::connect($sender2, $signal2, $receiver, $slot2);
+
+    $sender1->emit($signal1, $data);
+    $sender2->emit($signal2, $data);
+  }
+
+  /**
+   * Test connection.
+   *
+   * One sender, many signals, many receivers, many slots.
+   */
+  public function testOneSenderManySignalsToManyReceiversManySlots() {
+    $slot1 = 'slotOne';
+    $slot2 = 'slotTwo';
+    $signal1 = 'testSignal1';
+    $signal2 = 'testSignal2';
+    $data = 'Signal data';
+    $sender = new Sender();
+    $receiver1 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot1])
+      ->getMock();
+
+    $receiver1->expects($this->exactly(1))
+      ->method($slot1)
+      ->with($data);
+
+    $receiver2 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot2])
+      ->getMock();
+
+    $receiver2->expects($this->exactly(1))
+      ->method($slot2)
+      ->with($data);
+
+    ConnectionManager::connect($sender, $signal1, $receiver1, $slot1);
+    ConnectionManager::connect($sender, $signal2, $receiver2, $slot2);
+
+    $sender->emit($signal1, $data);
+    $sender->emit($signal2, $data);
+  }
+
+  /**
+   * Test connection.
+   *
+   * One sender, many signals, many receivers, many slots.
+   */
+  public function testManySendersManySignalsToManyReceiversManySlots() {
+    $slot1 = 'slotOne';
+    $slot2 = 'slotTwo';
+    $signal1 = 'testSignal1';
+    $signal2 = 'testSignal2';
+    $data = 'Signal data';
+    $sender1 = new Sender();
+    $sender2 = new Sender();
+    $receiver1 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot1])
+      ->getMock();
+
+    $receiver1->expects($this->exactly(1))
+      ->method($slot1)
+      ->with($data);
+
+    $receiver2 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot2])
+      ->getMock();
+
+    $receiver2->expects($this->exactly(1))
+      ->method($slot2)
+      ->with($data);
+
+    ConnectionManager::connect($sender1, $signal1, $receiver1, $slot1);
+    ConnectionManager::connect($sender2, $signal2, $receiver2, $slot2);
+
+    $sender1->emit($signal1, $data);
+    $sender2->emit($signal2, $data);
   }
 
   /**
