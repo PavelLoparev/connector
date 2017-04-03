@@ -1096,6 +1096,29 @@ class ConnectorTest extends TestCase {
   }
 
   /**
+   * Test connection: existing and unexisting slots.
+   */
+  public function testUnexistingAndExistingSlotCalling() {
+    $sender = new Sender();
+    $receiver = new Receiver();
+
+    // Connect signal to unexisting slot.
+    ConnectionManager::connect($sender, 'testSignal', $receiver, 'unexistingSlot');
+
+    $errors = $sender->emit('testSignal', 'Signal data');
+    $this->assertEquals(1, count($errors));
+    $this->assertEquals('Trying to call undefined slot "unexistingSlot" in a "Fluffy\Connector\Tests\Receiver\Receiver" class.', $errors[0]);
+
+    ConnectionManager::resetAllConnections();
+
+    // Connect signal to existing slot.
+    ConnectionManager::connect($sender, 'testSignal', $receiver, 'slotOne');
+
+    $errors = $sender->emit('testSignal', 'Signal data');
+    $this->assertEquals(0, count($errors));
+  }
+
+  /**
    * Test connection from one signal to one slot.
    *
    * One sender emits signal. One receiver reacts on one signal.

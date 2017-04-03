@@ -150,12 +150,14 @@ final class ConnectionManager {
   }
 
   /**
+   * Parses service connections from yaml file into array.
+   *
    * @param string $yaml
    *   Yaml string to parse.
    * @param \Symfony\Component\DependencyInjection\ContainerInterface $container
    *   Symfony service container.
    *
-   * @return mixed
+   * @return array
    */
   public static function parseServicesConnections($yaml, ContainerInterface $container) {
     try {
