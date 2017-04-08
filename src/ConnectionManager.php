@@ -77,7 +77,7 @@ final class ConnectionManager {
         if (!empty($add_connection)) {
           end(self::$connections[$sender_hash][$signal]);
           $key = key(self::$connections[$sender_hash][$signal]);
-          self::$connections[$sender_hash][$signal][] = $connection_item + ['key' => $key];
+          self::$connections[$sender_hash][$signal][] = $connection_item + ['key' => $key + 1];
         }
       }
     }

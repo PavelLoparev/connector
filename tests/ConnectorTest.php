@@ -2061,6 +2061,27 @@ class ConnectorTest extends TestCase {
             'signal' => $signal,
             'receiver' => new Receiver(),
             'slot' => 'slotOne',
+            'weight' => 0,
+          ],
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotTwo',
+            'weight' => 0,
+          ],
+        ],
+        $sender,
+        $signal,
+        'Slot one: Test data' . PHP_EOL . 'Slot two: Test data' . PHP_EOL,
+      ],
+      [
+        [
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotOne',
             'weight' => 1,
           ],
           [
@@ -2097,6 +2118,46 @@ class ConnectorTest extends TestCase {
         'Slot two: Test data' . PHP_EOL . 'Slot one: Test data' . PHP_EOL,
       ],
       // Default and explicit weights.
+      [
+        [
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotOne',
+          ],
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotTwo',
+            'weight' => 0,
+          ],
+        ],
+        $sender,
+        $signal,
+        'Slot one: Test data' . PHP_EOL . 'Slot two: Test data' . PHP_EOL,
+      ],
+      [
+        [
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotOne',
+            'weight' => 0,
+          ],
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotTwo',
+          ],
+        ],
+        $sender,
+        $signal,
+        'Slot one: Test data' . PHP_EOL . 'Slot two: Test data' . PHP_EOL,
+      ],
       [
         [
           [
