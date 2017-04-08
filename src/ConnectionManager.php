@@ -49,17 +49,18 @@ final class ConnectionManager {
    *   Connection type. CONNECTION_PERMANENT will work until it is disconnected.
    *   CONNECTION_ONE_TIME will work only once.
    */
-  public static function connect(SignalInterface $sender, $signal, $receiver, $slot, $connection_type = ConnectionManager::CONNECTION_PERMANENT) {
+  public static function connect(SignalInterface $sender, $signal, $receiver, $slot, $connection_type = ConnectionManager::CONNECTION_PERMANENT, $weight = 0) {
     $sender_hash = spl_object_hash($sender);
     $connection_item = [
       'receiver' => $receiver,
       'slot' => $slot,
       'type' => $connection_type,
+      'weight' => $weight,
     ];
 
     // Add new connection.
     if (empty(self::$connections[$sender_hash]) || empty(self::$connections[$sender_hash][$signal])) {
-      self::$connections[$sender_hash][$signal][] = $connection_item;
+      self::$connections[$sender_hash][$signal][] = $connection_item + ['key' => 0];
     }
     else {
       // Add new connection for same signal and receiver.
@@ -74,10 +75,24 @@ final class ConnectionManager {
         }
 
         if (!empty($add_connection)) {
-          self::$connections[$sender_hash][$signal][] = $connection_item;
+          end(self::$connections[$sender_hash][$signal]);
+          $key = key(self::$connections[$sender_hash][$signal]);
+          self::$connections[$sender_hash][$signal][] = $connection_item + ['key' => $key];
         }
       }
     }
+
+    // Perform slots stable sorting depends on connection weight.
+    usort(self::$connections[$sender_hash][$signal], function($a, $b) {
+      if ($a['weight'] == $b['weight']) {
+        $result = $a['key'] < $b['key'] ? -1 : 1;
+      }
+      else {
+        $result = $a['weight'] < $b['weight'] ? -1 : 1;
+      }
+
+      return $result;
+    });
   }
 
   /**
@@ -119,7 +134,8 @@ final class ConnectionManager {
    */
   public static function initConnections(array $connections) {
     foreach ($connections as $connection) {
-      if (empty($connection['sender']) ||
+      if (
+        empty($connection['sender']) ||
         empty($connection['signal']) ||
         empty($connection['receiver']) ||
         empty($connection['slot'])
@@ -131,20 +147,25 @@ final class ConnectionManager {
         if (!in_array($connection['type'], [
             ConnectionManager::CONNECTION_PERMANENT,
             ConnectionManager::CONNECTION_ONE_TIME,
-          ]
-        )) {
-          throw new RuntimeException("Unknown connection type.");
+          ])
+        ) {
+          throw new RuntimeException('Unknown connection type.');
         }
       }
       else {
         $connection['type'] = ConnectionManager::CONNECTION_PERMANENT;
       }
 
+      if (empty($connection['weight'])) {
+        $connection['weight'] = 0;
+      }
+
       ConnectionManager::connect($connection['sender'],
         $connection['signal'],
         $connection['receiver'],
         $connection['slot'],
-        $connection['type']
+        $connection['type'],
+        $connection['weight']
       );
     }
   }

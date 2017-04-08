@@ -3,6 +3,7 @@ test_connection_one:
   signal: testSignal
   receiver: service.receiver
   slot: slotOne
+  weight: 1
 
 test_connection_two:
   sender: service.sender

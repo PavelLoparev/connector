@@ -7,6 +7,7 @@
 
 namespace Fluffy\Connector\Tests;
 
+use Fluffy\Connector\Signal\SignalInterface;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Fluffy\Connector\ConnectionManager;
@@ -45,6 +46,13 @@ class ConnectorTest extends TestCase {
 
       foreach ($signals as $signal) {
         $receiversCount += count($signal);
+
+        // Check if ConnectionManager::initConnections() provides default
+        // keys and weights.
+        foreach ($signal as $item) {
+          $this->assertArrayHasKey('weight', $item);
+          $this->assertArrayHasKey('key', $item);
+        }
       }
     }
 
@@ -55,6 +63,7 @@ class ConnectorTest extends TestCase {
 
   /**
    * Data provider for testIfConnectionsAreCorrect() test.
+   *
    * @return array
    */
   public function ifConnectionsAreCorrectProvider() {
@@ -1800,7 +1809,7 @@ class ConnectorTest extends TestCase {
   }
 
   /**
-   * Data provider for testBatchInitConnections() test method.
+   * Data provider for testBatchInitConnections() test.
    */
   public function malformedConnectionsProvider() {
     return [
@@ -1929,21 +1938,24 @@ class ConnectorTest extends TestCase {
    * Test services connections.
    */
   public function testServicesConnections() {
+    // Application part.
     $container = new ContainerBuilder();
     $serviceLoader = new YamlFileLoader($container, new FileLocator(__DIR__));
     $serviceLoader->load('services.yml');
 
+    // Library part.
     $serviceConnections = ConnectionManager::parseServicesConnections(file_get_contents(__DIR__ . '/services.connections.yml'), $container);
     ConnectionManager::initConnections($serviceConnections);
 
-    $container->get('service.sender')->emit('testSignal', 'Signal data');
-    $this->expectOutputString('Slot one: Signal data' . PHP_EOL . 'Slot two: Signal data' . PHP_EOL);
+    $sender = $container->get('service.sender');
+    $sender->emit('testSignal', 'Signal data');
+    $this->expectOutputString('Slot two: Signal data' . PHP_EOL . 'Slot one: Signal data' . PHP_EOL);
 
     // Second connection is "one-time" so after this emission string
     // will contain only three 'Signal data' sub-strings. See
     // services.connections.yml.
-    $container->get('service.sender')->emit('testSignal', 'Signal data');
-    $this->expectOutputString('Slot one: Signal data' . PHP_EOL . 'Slot two: Signal data' . PHP_EOL . 'Slot one: Signal data' . PHP_EOL);
+    $sender->emit('testSignal', 'Signal data');
+    $this->expectOutputString('Slot two: Signal data' . PHP_EOL . 'Slot one: Signal data' . PHP_EOL . 'Slot one: Signal data' . PHP_EOL);
   }
 
   /**
@@ -1974,6 +1986,244 @@ class ConnectorTest extends TestCase {
     ConnectionManager::initConnections($serviceConnections);
 
     $this->assertEquals([], $serviceConnections);
+  }
+
+  /**
+   * Test connections weight.
+   *
+   * @param array $connections
+   * @param \Fluffy\Connector\Signal\SignalInterface $sender
+   * @param $signal
+   * @param $expected
+   *
+   * * @dataProvider connectionsWeightProvider
+   */
+  public function testConnectionsWeight(array $connections, SignalInterface $sender, $signal, $expected) {
+    ConnectionManager::initConnections($connections);
+    $sender->emit($signal, 'Test data');
+    $this->expectOutputString($expected);
+  }
+
+  /**
+   * Data provider for testConnectionsWeight() test.
+   *
+   * @return array
+   */
+  public function connectionsWeightProvider() {
+    $sender = new Sender();
+    $signal = 'testSignal';
+
+    return [
+      // Default weights.
+      [
+        [
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotOne',
+          ],
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotTwo',
+          ],
+        ],
+        $sender,
+        $signal,
+        'Slot one: Test data' . PHP_EOL . 'Slot two: Test data' . PHP_EOL,
+      ],
+      [
+        [
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotTwo',
+          ],
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotOne',
+          ],
+        ],
+        $sender,
+        $signal,
+        'Slot two: Test data' . PHP_EOL . 'Slot one: Test data' . PHP_EOL,
+      ],
+      // Explicit defined weights.
+      [
+        [
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotOne',
+            'weight' => 1,
+          ],
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotTwo',
+            'weight' => 2,
+          ],
+        ],
+        $sender,
+        $signal,
+        'Slot one: Test data' . PHP_EOL . 'Slot two: Test data' . PHP_EOL,
+      ],
+      [
+        [
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotOne',
+            'weight' => 2,
+          ],
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotTwo',
+            'weight' => 1,
+          ],
+        ],
+        $sender,
+        $signal,
+        'Slot two: Test data' . PHP_EOL . 'Slot one: Test data' . PHP_EOL,
+      ],
+      // Default and explicit weights.
+      [
+        [
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotOne',
+          ],
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotTwo',
+            'weight' => 1,
+          ],
+        ],
+        $sender,
+        $signal,
+        'Slot one: Test data' . PHP_EOL . 'Slot two: Test data' . PHP_EOL,
+      ],
+      [
+        [
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotOne',
+            'weight' => 1,
+          ],
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotTwo',
+          ],
+        ],
+        $sender,
+        $signal,
+        'Slot two: Test data' . PHP_EOL . 'Slot one: Test data' . PHP_EOL,
+      ],
+      // Negative weights.
+      [
+        [
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotOne',
+            'weight' => -20,
+          ],
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotTwo',
+            'weight' => -10,
+          ],
+        ],
+        $sender,
+        $signal,
+        'Slot one: Test data' . PHP_EOL . 'Slot two: Test data' . PHP_EOL,
+      ],
+      [
+        [
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotOne',
+            'weight' => -10,
+          ],
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotTwo',
+            'weight' => -20,
+          ],
+        ],
+        $sender,
+        $signal,
+        'Slot two: Test data' . PHP_EOL . 'Slot one: Test data' . PHP_EOL,
+      ],
+      // Float weights.
+      [
+        [
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotOne',
+            'weight' => 0.1,
+          ],
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotTwo',
+            'weight' => 0.2,
+          ],
+        ],
+        $sender,
+        $signal,
+        'Slot one: Test data' . PHP_EOL . 'Slot two: Test data' . PHP_EOL,
+      ],
+      [
+        [
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotOne',
+            'weight' => 0.2,
+          ],
+          [
+            'sender' => $sender,
+            'signal' => $signal,
+            'receiver' => new Receiver(),
+            'slot' => 'slotTwo',
+            'weight' => 0.1,
+          ],
+        ],
+        $sender,
+        $signal,
+        'Slot two: Test data' . PHP_EOL . 'Slot one: Test data' . PHP_EOL,
+      ],
+    ];
   }
 
 }
