@@ -1675,27 +1675,255 @@ class ConnectorTest extends TestCase {
   }
 
   /**
-   * Test disconnect.
-   *
-   * Connect, emit signal, disconnect and emit once again.
+   * Test disconnect: granularity - sender.
    */
-  public function testDisconnect() {
-    $sender = new Sender();
-    $receiver = $this->getMockBuilder(Receiver::class)
-      ->setMethods(['slotOne'])
+  public function testDisconnectSender() {
+    $sender1 = new Sender();
+    $sender2 = new Sender();
+    $signal1 = 'signal1';
+    $signal2 = 'signal2';
+    $slot1 = 'slotOne';
+    $slot2 = 'slotTwo';
+    $data = 'Signal data';
+
+    $receiver1 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot1, $slot2])
       ->getMock();
 
-    $receiver->expects($this->once())
-      ->method('slotOne')
-      ->with('Signal data');
+    $receiver1->expects($this->exactly(2))
+      ->method($slot1)
+      ->with($data);
 
-    ConnectionManager::connect($sender, 'testSignal', $receiver, 'slotOne');
+    $receiver1->expects($this->exactly(2))
+      ->method($slot2)
+      ->with($data);
 
-    $sender->emit('testSignal', 'Signal data');
+    $receiver2 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot1, $slot2])
+      ->getMock();
 
-    ConnectionManager::disconnect($sender, 'testSignal', $receiver, 'slotOne');
+    $receiver2->expects($this->exactly(2))
+      ->method($slot1)
+      ->with($data);
 
-    $sender->emit('testSignal', 'Signal data');
+    $receiver2->expects($this->exactly(2))
+      ->method($slot2)
+      ->with($data);
+
+    ConnectionManager::connect($sender1, $signal1, $receiver1, $slot1);
+    ConnectionManager::connect($sender1, $signal1, $receiver1, $slot2);
+    ConnectionManager::connect($sender1, $signal1, $receiver2, $slot1);
+    ConnectionManager::connect($sender1, $signal1, $receiver2, $slot2);
+    ConnectionManager::connect($sender1, $signal2, $receiver1, $slot1);
+    ConnectionManager::connect($sender1, $signal2, $receiver1, $slot2);
+    ConnectionManager::connect($sender1, $signal2, $receiver2, $slot1);
+    ConnectionManager::connect($sender1, $signal2, $receiver2, $slot2);
+
+    ConnectionManager::connect($sender2, $signal1, $receiver1, $slot1);
+    ConnectionManager::connect($sender2, $signal1, $receiver1, $slot2);
+    ConnectionManager::connect($sender2, $signal1, $receiver2, $slot1);
+    ConnectionManager::connect($sender2, $signal1, $receiver2, $slot2);
+    ConnectionManager::connect($sender2, $signal2, $receiver1, $slot1);
+    ConnectionManager::connect($sender2, $signal2, $receiver1, $slot2);
+    ConnectionManager::connect($sender2, $signal2, $receiver2, $slot1);
+    ConnectionManager::connect($sender2, $signal2, $receiver2, $slot2);
+
+    ConnectionManager::disconnect($sender1);
+
+    $sender1->emit($signal1, $data);
+    $sender1->emit($signal2, $data);
+
+    $sender2->emit($signal1, $data);
+    $sender2->emit($signal2, $data);
+  }
+
+  /**
+   * Test disconnect: granularity - sender + signal.
+   */
+  public function testDisconnectSenderSignal() {
+    $sender1 = new Sender();
+    $sender2 = new Sender();
+    $signal1 = 'signal1';
+    $signal2 = 'signal2';
+    $slot1 = 'slotOne';
+    $slot2 = 'slotTwo';
+    $data = 'Signal data';
+
+    $receiver1 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot1, $slot2])
+      ->getMock();
+
+    $receiver1->expects($this->exactly(3))
+      ->method($slot1)
+      ->with($data);
+
+    $receiver1->expects($this->exactly(3))
+      ->method($slot2)
+      ->with($data);
+
+    $receiver2 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot1, $slot2])
+      ->getMock();
+
+    $receiver2->expects($this->exactly(3))
+      ->method($slot1)
+      ->with($data);
+
+    $receiver2->expects($this->exactly(3))
+      ->method($slot2)
+      ->with($data);
+
+    ConnectionManager::connect($sender1, $signal1, $receiver1, $slot1);
+    ConnectionManager::connect($sender1, $signal1, $receiver1, $slot2);
+    ConnectionManager::connect($sender1, $signal1, $receiver2, $slot1);
+    ConnectionManager::connect($sender1, $signal1, $receiver2, $slot2);
+    ConnectionManager::connect($sender1, $signal2, $receiver1, $slot1);
+    ConnectionManager::connect($sender1, $signal2, $receiver1, $slot2);
+    ConnectionManager::connect($sender1, $signal2, $receiver2, $slot1);
+    ConnectionManager::connect($sender1, $signal2, $receiver2, $slot2);
+
+    ConnectionManager::connect($sender2, $signal1, $receiver1, $slot1);
+    ConnectionManager::connect($sender2, $signal1, $receiver1, $slot2);
+    ConnectionManager::connect($sender2, $signal1, $receiver2, $slot1);
+    ConnectionManager::connect($sender2, $signal1, $receiver2, $slot2);
+    ConnectionManager::connect($sender2, $signal2, $receiver1, $slot1);
+    ConnectionManager::connect($sender2, $signal2, $receiver1, $slot2);
+    ConnectionManager::connect($sender2, $signal2, $receiver2, $slot1);
+    ConnectionManager::connect($sender2, $signal2, $receiver2, $slot2);
+
+    ConnectionManager::disconnect($sender1, $signal1);
+
+    $sender1->emit($signal1, $data);
+    $sender1->emit($signal2, $data);
+
+    $sender2->emit($signal1, $data);
+    $sender2->emit($signal2, $data);
+  }
+
+  /**
+   * Test disconnect: granularity - sender + signal + receiver.
+   */
+  public function testDisconnectSenderSignalReceiver() {
+    $sender1 = new Sender();
+    $sender2 = new Sender();
+    $signal1 = 'signal1';
+    $signal2 = 'signal2';
+    $slot1 = 'slotOne';
+    $slot2 = 'slotTwo';
+    $data = 'Signal data';
+
+    $receiver1 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot1, $slot2])
+      ->getMock();
+
+    $receiver1->expects($this->exactly(3))
+      ->method($slot1)
+      ->with($data);
+
+    $receiver1->expects($this->exactly(3))
+      ->method($slot2)
+      ->with($data);
+
+    $receiver2 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot1, $slot2])
+      ->getMock();
+
+    $receiver2->expects($this->exactly(4))
+      ->method($slot1)
+      ->with($data);
+
+    $receiver2->expects($this->exactly(4))
+      ->method($slot2)
+      ->with($data);
+
+    ConnectionManager::connect($sender1, $signal1, $receiver1, $slot1);
+    ConnectionManager::connect($sender1, $signal1, $receiver1, $slot2);
+    ConnectionManager::connect($sender1, $signal1, $receiver2, $slot1);
+    ConnectionManager::connect($sender1, $signal1, $receiver2, $slot2);
+    ConnectionManager::connect($sender1, $signal2, $receiver1, $slot1);
+    ConnectionManager::connect($sender1, $signal2, $receiver1, $slot2);
+    ConnectionManager::connect($sender1, $signal2, $receiver2, $slot1);
+    ConnectionManager::connect($sender1, $signal2, $receiver2, $slot2);
+
+    ConnectionManager::connect($sender2, $signal1, $receiver1, $slot1);
+    ConnectionManager::connect($sender2, $signal1, $receiver1, $slot2);
+    ConnectionManager::connect($sender2, $signal1, $receiver2, $slot1);
+    ConnectionManager::connect($sender2, $signal1, $receiver2, $slot2);
+    ConnectionManager::connect($sender2, $signal2, $receiver1, $slot1);
+    ConnectionManager::connect($sender2, $signal2, $receiver1, $slot2);
+    ConnectionManager::connect($sender2, $signal2, $receiver2, $slot1);
+    ConnectionManager::connect($sender2, $signal2, $receiver2, $slot2);
+
+    ConnectionManager::disconnect($sender1, $signal1, $receiver1);
+
+    $sender1->emit($signal1, $data);
+    $sender1->emit($signal2, $data);
+
+    $sender2->emit($signal1, $data);
+    $sender2->emit($signal2, $data);
+  }
+
+  /**
+   * Test disconnect: granularity - sender + signal + receiver + slot.
+   */
+  public function testDisconnectSenderSignalReceiverSlot() {
+    $sender1 = new Sender();
+    $sender2 = new Sender();
+    $signal1 = 'signal1';
+    $signal2 = 'signal2';
+    $slot1 = 'slotOne';
+    $slot2 = 'slotTwo';
+    $data = 'Signal data';
+
+    $receiver1 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot1, $slot2])
+      ->getMock();
+
+    $receiver1->expects($this->exactly(3))
+      ->method($slot1)
+      ->with($data);
+
+    $receiver1->expects($this->exactly(4))
+      ->method($slot2)
+      ->with($data);
+
+    $receiver2 = $this->getMockBuilder(Receiver::class)
+      ->setMethods([$slot1, $slot2])
+      ->getMock();
+
+    $receiver2->expects($this->exactly(4))
+      ->method($slot1)
+      ->with($data);
+
+    $receiver2->expects($this->exactly(4))
+      ->method($slot2)
+      ->with($data);
+
+    ConnectionManager::connect($sender1, $signal1, $receiver1, $slot1);
+    ConnectionManager::connect($sender1, $signal1, $receiver1, $slot2);
+    ConnectionManager::connect($sender1, $signal1, $receiver2, $slot1);
+    ConnectionManager::connect($sender1, $signal1, $receiver2, $slot2);
+    ConnectionManager::connect($sender1, $signal2, $receiver1, $slot1);
+    ConnectionManager::connect($sender1, $signal2, $receiver1, $slot2);
+    ConnectionManager::connect($sender1, $signal2, $receiver2, $slot1);
+    ConnectionManager::connect($sender1, $signal2, $receiver2, $slot2);
+
+    ConnectionManager::connect($sender2, $signal1, $receiver1, $slot1);
+    ConnectionManager::connect($sender2, $signal1, $receiver1, $slot2);
+    ConnectionManager::connect($sender2, $signal1, $receiver2, $slot1);
+    ConnectionManager::connect($sender2, $signal1, $receiver2, $slot2);
+    ConnectionManager::connect($sender2, $signal2, $receiver1, $slot1);
+    ConnectionManager::connect($sender2, $signal2, $receiver1, $slot2);
+    ConnectionManager::connect($sender2, $signal2, $receiver2, $slot1);
+    ConnectionManager::connect($sender2, $signal2, $receiver2, $slot2);
+
+    ConnectionManager::disconnect($sender1, $signal1, $receiver1, $slot1);
+
+    $sender1->emit($signal1, $data);
+    $sender1->emit($signal2, $data);
+
+    $sender2->emit($signal1, $data);
+    $sender2->emit($signal2, $data);
   }
 
   /**
@@ -1996,7 +2224,7 @@ class ConnectorTest extends TestCase {
    * @param $signal
    * @param $expected
    *
-   * * @dataProvider connectionsWeightProvider
+   * @dataProvider connectionsWeightProvider
    */
   public function testConnectionsWeight(array $connections, SignalInterface $sender, $signal, $expected) {
     ConnectionManager::initConnections($connections);

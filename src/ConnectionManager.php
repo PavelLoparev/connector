@@ -30,6 +30,31 @@ final class ConnectionManager {
   const CONNECTION_ONE_TIME = 1;
 
   /**
+   * Constant defines granularity 'all'.
+   */
+  const GRANULARITY_ALL = 0;
+
+  /**
+   * Constant defines granularity 'sender'.
+   */
+  const GRANULARITY_SENDER = 1;
+
+  /**
+   * Constant defines granularity 'sender and signal'.
+   */
+  const GRANULARITY_SENDER_SIGNAL = 2;
+
+  /**
+   * Constant defines granularity 'sender, signal and receiver'.
+   */
+  const GRANULARITY_SENDER_SIGNAL_RECEIVER = 3;
+
+  /**
+   * Constant defines granularity 'sender, signal, receiver and slot'.
+   */
+  const GRANULARITY_SENDER_SIGNAL_RECEIVER_SLOT = 4;
+
+  /**
    * @var array
    */
   private static $connections = [];
@@ -45,45 +70,50 @@ final class ConnectionManager {
    *   Object that defines a $slot.
    * @param string $slot
    *   Slot name.
-   * @param int $connection_type
+   * @param int $connectionType
    *   Connection type. CONNECTION_PERMANENT will work until it is disconnected.
    *   CONNECTION_ONE_TIME will work only once.
+   * @param int $weight
+   *   Connection weight.
    */
-  public static function connect(SignalInterface $sender, $signal, $receiver, $slot, $connection_type = ConnectionManager::CONNECTION_PERMANENT, $weight = 0) {
-    $sender_hash = spl_object_hash($sender);
-    $connection_item = [
+  public static function connect(SignalInterface $sender, $signal, $receiver, $slot, $connectionType = ConnectionManager::CONNECTION_PERMANENT, $weight = 0) {
+    $senderHash = spl_object_hash($sender);
+    $connectionItem = [
       'receiver' => $receiver,
       'slot' => $slot,
-      'type' => $connection_type,
+      'type' => $connectionType,
       'weight' => $weight,
     ];
 
     // Add new connection.
-    if (empty(self::$connections[$sender_hash]) || empty(self::$connections[$sender_hash][$signal])) {
-      self::$connections[$sender_hash][$signal][] = $connection_item + ['key' => 0];
+    if (empty(self::$connections[$senderHash]) || empty(self::$connections[$senderHash][$signal])) {
+      self::$connections[$senderHash][$signal][] = $connectionItem + ['key' => 0];
     }
     else {
-      // Add new connection for same signal and receiver.
-      if (!empty(self::$connections[$sender_hash][$signal])) {
-        $add_connection = TRUE;
+      // Add new connection for existing signal and receiver.
+      if (!empty(self::$connections[$senderHash][$signal])) {
+        $addConnection = TRUE;
 
-        foreach (self::$connections[$sender_hash][$signal] as $connection) {
-          if (spl_object_hash($connection['receiver']) == spl_object_hash($receiver) && $connection['slot'] == $slot) {
-            $add_connection = FALSE;
+        // Find out if connection for this receiver and slot is already
+        // exists.
+        foreach (self::$connections[$senderHash][$signal] as $connection) {
+          if ($connection['receiver'] === $receiver && $connection['slot'] == $slot) {
+            $addConnection = FALSE;
             break;
           }
         }
 
-        if (!empty($add_connection)) {
-          end(self::$connections[$sender_hash][$signal]);
-          $key = key(self::$connections[$sender_hash][$signal]);
-          self::$connections[$sender_hash][$signal][] = $connection_item + ['key' => $key + 1];
+        // Add connection for existing signal.
+        if (!empty($addConnection)) {
+          end(self::$connections[$senderHash][$signal]);
+          $key = key(self::$connections[$senderHash][$signal]);
+          self::$connections[$senderHash][$signal][] = $connectionItem + ['key' => $key + 1];
         }
       }
     }
 
     // Perform slots stable sorting depends on connection weight.
-    usort(self::$connections[$sender_hash][$signal], function($a, $b) {
+    usort(self::$connections[$senderHash][$signal], function($a, $b) {
       if ($a['weight'] == $b['weight']) {
         $result = $a['key'] < $b['key'] ? -1 : 1;
       }
@@ -107,22 +137,54 @@ final class ConnectionManager {
    * @param string $slot
    *   Slot name.
    */
-  public static function disconnect(SignalInterface $sender, $signal, $receiver, $slot) {
-    $sender_hash = spl_object_hash($sender);
+  public static function disconnect(SignalInterface $sender, $signal = NULL, $receiver = NULL, $slot = NULL) {
+    $senderHash = spl_object_hash($sender);
 
-    // Find and remove connection.
-    if (!empty(self::$connections[$sender_hash]) && !empty(self::$connections[$sender_hash][$signal])) {
-      foreach (self::$connections[$sender_hash][$signal] as $connection_index => $connection) {
-        $receiver_hash = spl_object_hash($receiver);
+    switch (self::getGranularity($sender, $signal, $receiver, $slot)) {
+      // Disconnect all receivers from all signals for a given sender.
+      case self::GRANULARITY_SENDER:
+        unset(self::$connections[$senderHash]);
 
-        if (spl_object_hash($connection['receiver']) == $receiver_hash && $connection['slot'] == $slot) {
-          unset(self::$connections[$sender_hash][$signal][$connection_index]);
+        break;
+
+      // Disconnect all receivers from a given signal.
+      case self::GRANULARITY_SENDER_SIGNAL:
+        unset(self::$connections[$senderHash][$signal]);
+
+        break;
+
+      // Disconnect a given receiver's all slots from a given signal.
+      case self::GRANULARITY_SENDER_SIGNAL_RECEIVER:
+        if (!empty(self::$connections[$senderHash][$signal])) {
+          foreach (self::$connections[$senderHash][$signal] as $connectionIndex => $connection) {
+            if ($connection['receiver'] === $receiver) {
+              unset(self::$connections[$senderHash][$signal][$connectionIndex]);
+            }
+
+            if (empty(self::$connections[$senderHash][$signal])) {
+              unset(self::$connections[$senderHash]);
+            }
+          }
         }
 
-        if (empty(self::$connections[$sender_hash][$signal])) {
-          unset(self::$connections[$sender_hash]);
+        break;
+
+      // Disconnect a given receiver's slot from a given signal.
+      case self::GRANULARITY_SENDER_SIGNAL_RECEIVER_SLOT:
+        // Find and remove connection.
+        if (!empty(self::$connections[$senderHash][$signal])) {
+          foreach (self::$connections[$senderHash][$signal] as $connectionIndex => $connection) {
+            if ($connection['receiver'] === $receiver && $connection['slot'] == $slot) {
+              unset(self::$connections[$senderHash][$signal][$connectionIndex]);
+            }
+
+            if (empty(self::$connections[$senderHash][$signal])) {
+              unset(self::$connections[$senderHash]);
+            }
+          }
         }
-      }
+
+        break;
     }
   }
 
@@ -216,6 +278,57 @@ final class ConnectionManager {
    */
   public static function resetAllConnections() {
     self::$connections = [];
+  }
+
+  /**
+   * Returns granularity for given parameters.
+   *
+   * Uses in ConnectionManager::disconnect() function.
+   *
+   * @param \Fluffy\Connector\Signal\SignalInterface|NULL $sender
+   * @param null $signal
+   * @param null $receiver
+   * @param null $slot
+   *
+   * @return int
+   */
+  private function getGranularity(SignalInterface $sender = NULL, $signal = NULL, $receiver = NULL, $slot = NULL) {
+    $granularity = self::GRANULARITY_ALL;
+
+    if (
+      !empty($sender) &&
+      empty($signal) &&
+      empty($receiver) &&
+      empty($slot)
+    ) {
+      $granularity = self::GRANULARITY_SENDER;
+    }
+    elseif (
+      !empty($sender) &&
+      !empty($signal) &&
+      empty($receiver) &&
+      empty($slot)
+    ) {
+      $granularity = self::GRANULARITY_SENDER_SIGNAL;
+    }
+    elseif (
+      !empty($sender) &&
+      !empty($signal) &&
+      !empty($receiver) &&
+      empty($slot)
+    ) {
+      $granularity = self::GRANULARITY_SENDER_SIGNAL_RECEIVER;
+    }
+    elseif (
+      !empty($sender) &&
+      !empty($signal) &&
+      !empty($receiver) &&
+      !empty($slot)
+    ) {
+      $granularity = self::GRANULARITY_SENDER_SIGNAL_RECEIVER_SLOT;
+    }
+
+    return $granularity;
   }
 
 }
