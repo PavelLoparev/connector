@@ -292,7 +292,7 @@ final class ConnectionManager {
    *
    * @return int
    */
-  private function getGranularity(SignalInterface $sender = NULL, $signal = NULL, $receiver = NULL, $slot = NULL) {
+  private static function getGranularity(SignalInterface $sender = NULL, $signal = NULL, $receiver = NULL, $slot = NULL) {
     $granularity = self::GRANULARITY_ALL;
 
     if (
