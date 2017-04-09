@@ -27,7 +27,7 @@ or add dependency to your composer.json file
 
 # Usage
 
-**1. Signals**
+### 1. Signals
 
 If you want your object will be able to emit signals you need to implement `SignalInterface` and use `SignalTrait`. For example you have some logger class and you want to emit signal `somethingIsLogged` when logger finished work:
 ```php
@@ -60,7 +60,7 @@ class Logger implements SignalInterface {
 
 To emit signal you need to call `emit` method and pass signal name and data. You can pass whatever you want: array, string, object or number. That's all. Now your logger emits signal to outer world. But nobody is connected to this signal yet. Let do this stuff.
 
-**2. Slots**
+### 2. Slots
 
 Slot it's a usual class method. Let's define a class with a slot.
 ```php
@@ -85,7 +85,8 @@ class Receiver
 
 ```
 
-**3. Connections**
+### 3. Connections
+
 For now we have `Logger` class that emits signal and `Receiver` class with a slot. To react on signal with slot you need to connect them to each other. Let's do it.
 ```php
 use Fluffy\Connector\ConnectionManager;
@@ -115,12 +116,12 @@ ConnectionManager::initConnections([
     'receiver' => new Receiver(),
     'slot' => 'slotReactOnSignal',
     'type' => ConnectionManager::CONNECTION_PERMANENT,
-  ]
+  ],
   ...
 ]);
 ```
 
-**4. Connection types**
+#### 3.1. Connection types
 
 By default `ConnectionManager::connect()` method creates permanent connections. It means that slot will not be disconnected from signal after first emission. But you can make one-time connection. Just pass 5th parameter to `ConnectionManager::connect()` method as `ConnectionManager::CONNECTION_ONE_TIME`. For example:
 ```php
@@ -139,18 +140,34 @@ $logger->log();
 
 After second call of `Logger::log()` nothing will happen because slot will be disconnected from signal after first emission.
 
-**5. Disconnect**
+### 4. Disconnect
 
 If you don't want to listen signal anymore just disconnect from it.
 ```php
 ConnectionManager::disconnect($logger, 'somethingIsLogged', $receiver, 'slotReactOnSignal');
 ```
+
+You can also disconnect connections by conditions:
+
+ 1. Disconnect all receivers from all signals for a given sender.
+```php
+ConnectionManager::disconnect($logger);
+```
+ 2. Disconnect all receivers from a given signal of a given sender.
+```php
+ConnectionManager::disconnect($logger, 'somethingIsLogged');
+```
+ 3. Disconnect all slots from a given receiver from a given signal of a given sender.
+```php
+ConnectionManager::disconnect($logger, 'somethingIsLogged', $receiver);
+```
+
 If you want to reset all existing connections call
 ```php
 ConnectionManager::resetAllConnections()
 ```
 
-**6. Services connections**
+### 5. Services connections
 
 If you are using `Symfony Dependency Injection` component you might don't want to create objects manually but retrieve them from service container instead. For such cases you can connect your services defined in `services.yml` file without any manual object creation. That's how you can achieve this:
 
@@ -181,6 +198,9 @@ test_connection_one:
   # You can omit "type" parameter and it will be
   # "permanent" by default.
   type: 0
+  # Connection weight. You can omit "weight" parameter and it will be
+  # "0" by default.
+  weight: 1
 
   # You can define as many connections as you want.
   ...
