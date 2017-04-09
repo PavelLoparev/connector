@@ -140,6 +140,30 @@ $logger->log();
 
 After second call of `Logger::log()` nothing will happen because slot will be disconnected from signal after first emission.
 
+#### 3.2. Connection weights
+
+Since you can connect different receivers with different slots to one sender and signal `ConnectionManager` calls connected slots in a special order - by connections weights. Lower weight has higher priority. Connections weights affect on order of slots from all receivers but not on order of slots inside one receiver.
+
+By default `ConnectionManager::connect()` method creates permanent connections with zero weight. But you can change it by passing 6th parameter to `ConnectionManager::connect()` method. For example:
+```php
+use Fluffy\Connector\ConnectionManager;
+
+$logger = new Logger();
+$receiver = new Receiver();
+
+// This connection has weight 0 by default.
+ConnectionManager::connect($logger, 'somethingIsLogged', $receiver, 'slotReactOnSignal');
+
+// And this has weight -10.
+ConnectionManager::connect($logger, 'somethingIsLogged', $receiver, 'anotherSlotReactOnSignal', ConnectionManager::CONNECTION_ONE_TIME, -10);
+
+// Signal 'somethingIsLogged' is emitted here. Since we've explicitly defined
+// connections weights `ConnectionManager` will call slots in the next order:
+// 1. Slot 'anotherSlotReactOnSignal'.
+// 2. Slot 'slotReactOnSignal'.
+$logger->log();
+```
+
 ### 4. Disconnect
 
 If you don't want to listen signal anymore just disconnect from it.
